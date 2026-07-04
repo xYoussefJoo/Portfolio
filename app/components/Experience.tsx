@@ -27,23 +27,27 @@ export function Experience() {
   ];
 
   return (
-    <section id="experience" className="py-24 px-6 md:px-12 relative overflow-hidden">
-      <div className="max-w-7xl mx-auto space-y-16">
+    <section id="experience" className="py-32 px-6 md:px-12 relative overflow-hidden bg-grid-curved">
+      {/* Glow blobs */}
+      <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-[#8A60F1]/5 blur-[120px] pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto space-y-20 relative z-10">
         {/* Section Header */}
         <ScrollReveal variant="fade-in-up" className="space-y-4 max-w-xl">
-          <span className="text-sm font-mono text-stone-900 dark:text-stone-100 bg-white/20 dark:bg-white/10 px-3 py-1 rounded-md inline-block border border-white/10">
-            TIMELINE
+          <span className="text-xs font-mono font-bold tracking-widest text-[#8A60F1] uppercase bg-[#8A60F1]/10 px-3 py-1.5 rounded-md border border-[#8A60F1]/20 inline-block shadow-[0_0_15px_rgba(138,96,241,0.1)]">
+            04 // JOURNEY
           </span>
-          <h3 className="text-4xl md:text-5xl font-light tracking-tight font-serif text-stone-950 dark:text-white">
-            Journey & <span className="font-semibold italic">experience</span>
-          </h3>
-          <p className="text-stone-850 dark:text-stone-300">
-            My professional path combining formal computer science education at AITU with real-world Upwork contract engineering.
+          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
+            Journey & <br />
+            <span className="bg-gradient-to-r from-[#8A60F1] to-fuchsia-400 bg-clip-text text-transparent">experience</span>
+          </h2>
+          <p className="text-stone-300 font-light leading-relaxed">
+            A history of client deliveries, professional integration services, and academic learning.
           </p>
         </ScrollReveal>
 
         {/* Timeline Path */}
-        <div className="relative border-l border-stone-800/15 dark:border-white/10 ml-4 md:ml-8 space-y-12 max-w-4xl">
+        <div className="relative border-l border-[#8A60F1]/20 ml-4 md:ml-8 space-y-12 max-w-4xl">
           {experiences.map((exp, idx) => (
             <ScrollReveal
               key={idx}
@@ -52,29 +56,29 @@ export function Experience() {
               className="relative pl-8 md:pl-12 group"
             >
               {/* Timeline dot */}
-              <div className="absolute -left-4 top-1.5 w-8 h-8 rounded-full bg-stone-900 dark:bg-stone-100 text-white dark:text-stone-900 flex items-center justify-center border-4 border-[#B2A2A1] dark:border-[#1E1B1A] group-hover:scale-110 group-hover:bg-stone-800 dark:group-hover:bg-white transition-all shadow-md">
+              <div className="absolute -left-4.5 top-1.5 w-9 h-9 rounded-full bg-[#050816] text-white flex items-center justify-center border border-[#8A60F1]/30 group-hover:border-[#8A60F1] group-hover:shadow-[0_0_15px_rgba(138,96,241,0.5)] group-hover:scale-105 transition-all duration-300 shadow-md">
                 {exp.type === "work" ? (
-                  <Briefcase className="w-3.5 h-3.5" />
+                  <Briefcase className="w-4 h-4 text-[#8A60F1]" />
                 ) : (
-                  <GraduationCap className="w-3.5 h-3.5" />
+                  <GraduationCap className="w-4 h-4 text-[#8A60F1]" />
                 )}
               </div>
 
               {/* Card Container */}
-              <div className="bg-white/15 dark:bg-white/5 border border-white/20 dark:border-white/10 hover:border-white/35 dark:hover:border-white/20 rounded-3xl p-6 md:p-8 transition-all duration-350 hover:shadow-lg hover:shadow-stone-900/5 space-y-4">
+              <div className="glass-card rounded-3xl p-6 md:p-8 hover:border-[#8A60F1]/40 hover:shadow-[0_0_25px_rgba(138,96,241,0.05)] transition-all duration-500 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <h4 className="text-xl font-bold text-stone-950 dark:text-white">{exp.role}</h4>
-                    <span className="text-stone-900 dark:text-stone-300 font-semibold text-sm">
+                    <h4 className="text-xl font-bold text-white tracking-wide">{exp.role}</h4>
+                    <span className="text-[#8A60F1] font-semibold text-sm">
                       {exp.company}
                     </span>
                   </div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 dark:bg-white/10 text-stone-900 dark:text-stone-200 text-xs font-semibold self-start sm:self-auto shadow-sm border border-white/5">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8A60F1]/10 text-[#8A60F1] text-xs font-semibold self-start sm:self-auto border border-[#8A60F1]/20 shadow-[0_0_10px_rgba(138,96,241,0.05)]">
                     <Calendar className="w-3.5 h-3.5" />
                     {exp.period}
                   </div>
                 </div>
-                <p className="text-stone-850 dark:text-stone-300 text-sm md:text-base leading-relaxed font-normal">
+                <p className="text-stone-300 text-sm md:text-base leading-relaxed font-light">
                   {exp.description}
                 </p>
               </div>

@@ -2,63 +2,54 @@ import type { Route } from "./+types/home";
 import { Navbar } from "~/components/Navbar";
 import { Hero } from "~/components/Hero";
 import { About } from "~/components/About";
+import { Skills } from "~/components/Skills";
 import { Projects } from "~/components/Projects";
 import { Experience } from "~/components/Experience";
+import { Testimonials } from "~/components/Testimonials";
 import { Contact } from "~/components/Contact";
 import { Footer } from "~/components/Footer";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Youssef Gamal | Full-Stack .NET & Frontend Developer" },
+    { title: "Youssef Gamal | Full-Stack .NET & 3D Web Developer" },
     {
       name: "description",
-      content: "Personal portfolio of Youssef Gamal, featuring premium full-stack ASP.NET Core backend systems and Next.js frontend projects.",
+      content: "Futuristic personal portfolio of Youssef Gamal, engineering interactive 3D web interfaces and enterprise-grade ASP.NET Core backend services.",
     },
   ];
 }
 
 export default function Home() {
   return (
-    <div className="min-h-screen flex flex-col font-sans selection:bg-stone-900 selection:text-white dark:selection:bg-stone-100 dark:selection:text-stone-900 antialiased">
-      {/* Navigation Bar */}
+    <div className="min-h-screen bg-[#050816] text-white selection:bg-[#8A60F1]/30 selection:text-white antialiased">
+      {/* Interactive Sticky Navbar */}
       <Navbar />
 
-      {/* Main Content Sections */}
-      <main className="flex-grow">
-        {/* Hero Banner */}
+      {/* Main Content */}
+      <main>
+        {/* Hero Section with Interactive 3D Canvas */}
         <Hero />
 
-        {/* Separator lines or page breaks for modern design */}
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <div className="h-px bg-stone-850/10 w-full" />
-        </div>
-
-        {/* About Section */}
+        {/* Biography Section */}
         <About />
 
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <div className="h-px bg-stone-850/10 w-full" />
-        </div>
+        {/* Detailed Skills Section */}
+        <Skills />
 
-        {/* Selected Work Projects Showcase */}
+        {/* Projects Grid Section with 3D hover effects */}
         <Projects />
 
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <div className="h-px bg-stone-850/10 w-full" />
-        </div>
-
-        {/* Timeline & Professional Experience */}
+        {/* Journey Timeline */}
         <Experience />
 
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-          <div className="h-px bg-stone-850/10 w-full" />
-        </div>
+        {/* Client Success Stories */}
+        <Testimonials />
 
-        {/* Interactive Contact Forms */}
+        {/* Dynamic Contact Forms */}
         <Contact />
       </main>
 
-      {/* Page Footer */}
+      {/* Glowing Footer */}
       <Footer />
     </div>
   );

@@ -1,33 +1,9 @@
-import { Globe, Award, Calendar, Compass, Sparkles } from "lucide-react";
+import { Globe, Calendar, Compass, Sparkles } from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
+import { useLanguage } from "~/context/LanguageContext";
 
 export function Experience() {
-  const experiences = [
-    {
-      period: "Year 3 — Present",
-      role: "Senior Graphic Designer & Brand Consultant",
-      company: "Global Remote Clients (US, Germany, France, Egypt)",
-      location: "United States • Germany • France • Egypt",
-      badge: "+200 Milestone",
-      description: "Surpassed +200 completed projects worldwide. Directing high-end visual brand architectures, luxury 3D product packaging mockups in Adobe Dimension, and dynamic motion graphics with After Effects for international agencies, technology startups, and consumer brands.",
-    },
-    {
-      period: "Year 2",
-      role: "European & Transatlantic Brand Designer",
-      company: "Contract Design & Boutique Brands",
-      location: "Germany • France • United States",
-      badge: "European Expansion",
-      description: "Expanded design operations into European markets including Germany and France while scaling transatlantic projects in the US. Spearheaded minimalist editorial layouts, luxury packaging for French perfumeries, and German technical brand guidelines, utilizing fluent German and English client communications.",
-    },
-    {
-      period: "Year 1 — Foundation",
-      role: "Graphic Designer & Visual Identity Specialist",
-      company: "Agency & Freelance Collaborations",
-      location: "United States • Egypt",
-      badge: "Inception & Growth",
-      description: "Launched professional career delivering high-impact brand identities, vector logo design systems, and digital advertising campaigns for clients across Egypt and the United States. Completed 60+ projects with exceptional 5-star ratings.",
-    },
-  ];
+  const { t } = useLanguage();
 
   return (
     <section id="experience" className="py-32 px-6 md:px-12 relative overflow-hidden bg-grid-curved transition-colors duration-350">
@@ -38,20 +14,20 @@ export function Experience() {
         {/* Section Header */}
         <ScrollReveal variant="fade-in-up" className="space-y-4 max-w-xl">
           <span className="text-xs font-mono font-bold tracking-widest text-[#8A60F1] uppercase bg-[#8A60F1]/10 px-3 py-1.5 rounded-md border border-[#8A60F1]/20 inline-block shadow-[0_0_15px_rgba(138,96,241,0.1)]">
-            04 // GLOBAL JOURNEY
+            {t.experience.tag}
           </span>
           <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-            3 Years & <br />
-            <span className="bg-gradient-to-r from-[#8A60F1] to-fuchsia-500 bg-clip-text text-transparent">international reach</span>
+            {t.experience.titleLine1} <br />
+            <span className="bg-gradient-to-r from-[#8A60F1] to-fuchsia-500 bg-clip-text text-transparent">{t.experience.titleGradient}</span>
           </h2>
           <p className="text-[var(--text-secondary)] font-light leading-relaxed">
-            From the United States & Egypt to Germany & France — a track record of +200 successful design deliveries across the globe.
+            {t.experience.description}
           </p>
         </ScrollReveal>
 
         {/* Timeline Path */}
         <div className="relative border-l border-[#8A60F1]/25 ml-4 md:ml-8 space-y-12 max-w-4xl">
-          {experiences.map((exp, idx) => (
+          {t.experience.items.map((exp, idx) => (
             <ScrollReveal
               key={idx}
               variant="fade-in-up"

@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { Mail } from "lucide-react";
 import * as THREE from "three";
 import { motion } from "framer-motion";
+import { useLanguage } from "~/context/LanguageContext";
 
 export function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
     setMounted(true);
@@ -392,7 +394,7 @@ export function Hero() {
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8A60F1]/10 border border-[#8A60F1]/20 text-xs font-semibold uppercase tracking-wider text-[#8A60F1] shadow-[0_0_15px_rgba(138,96,241,0.1)]"
           >
             <span className="w-2 h-2 rounded-full bg-[#8A60F1] animate-pulse" />
-            Senior Graphic Designer & Visual Artist
+            {t.hero.badge}
           </motion.div>
 
           <div className="space-y-4">
@@ -402,9 +404,9 @@ export function Hero() {
               transition={{ duration: 0.6, delay: 0.15 }}
               className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] text-[var(--text-primary)]"
             >
-              Crafting Iconic <br />
+              {t.hero.titleLine1} <br />
               <span className="bg-gradient-to-r from-[#8A60F1] via-fuchsia-400 to-[#00f0ff] bg-clip-text text-transparent text-glow-purple">
-                Visual Identities
+                {t.hero.titleGradient}
               </span>
             </motion.h1>
 
@@ -414,7 +416,7 @@ export function Hero() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-lg md:text-xl text-[var(--text-secondary)] font-normal max-w-xl leading-relaxed"
             >
-              I am <span className="font-semibold text-[var(--text-primary)]">Kero Amir</span>. With <span className="text-[#8A60F1] font-semibold">3+ years of experience</span> and over <span className="text-[var(--text-primary)] font-semibold">+200 projects</span> delivered across the <span className="text-[var(--text-primary)] font-semibold">US, Germany, France, and Egypt</span>, I create extraordinary brand experiences powered by master-level Adobe Creative Cloud expertise.
+              {t.hero.intro}
             </motion.p>
           </div>
 
@@ -427,15 +429,15 @@ export function Hero() {
           >
             <span className="px-3.5 py-1.5 rounded-xl bg-[var(--pill-bg)] border border-[var(--pill-border)] text-xs text-[var(--text-secondary)] font-medium flex items-center gap-1.5 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              +200 Projects Delivered
+              {t.hero.statProjects}
             </span>
             <span className="px-3.5 py-1.5 rounded-xl bg-[var(--pill-bg)] border border-[var(--pill-border)] text-xs text-[var(--text-secondary)] font-medium flex items-center gap-1.5 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-[#8A60F1]"></span>
-              Adobe CC Suite Specialist
+              {t.hero.statAdobe}
             </span>
             <span className="px-3.5 py-1.5 rounded-xl bg-[var(--pill-bg)] border border-[var(--pill-border)] text-xs text-[var(--text-secondary)] font-medium flex items-center gap-1.5 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
-              English & German Fluent
+              {t.hero.statLanguages}
             </span>
           </motion.div>
 
@@ -450,13 +452,13 @@ export function Hero() {
               href="#projects"
               className="px-6 py-3 rounded-full bg-gradient-to-r from-[#8A60F1] to-fuchsia-600 hover:from-[#7b51e0] hover:to-fuchsia-700 text-white font-semibold text-sm transition-all duration-300 hover:shadow-[0_0_25px_rgba(138,96,241,0.5)] hover:scale-[1.03] active:scale-[0.98]"
             >
-              Explore Portfolio
+              {t.hero.ctaProjects}
             </a>
             <a
               href="#contact"
               className="px-6 py-3 rounded-full bg-[var(--pill-bg)] hover:bg-[var(--pill-hover-bg)] border border-[var(--pill-border)] hover:border-[#8A60F1]/50 text-[var(--text-primary)] font-semibold text-sm transition-all duration-300 hover:scale-[1.03]"
             >
-              Let's Talk
+              {t.hero.ctaContact}
             </a>
           </motion.div>
         </div>

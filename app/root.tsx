@@ -8,6 +8,7 @@ import {
 } from "react-router";
 
 import type { Route } from "./+types/root";
+import { LanguageProvider } from "./context/LanguageContext";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -42,6 +43,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     document.documentElement.classList.add('dark');
                     document.documentElement.classList.remove('light');
                   }
+                  const storedLang = localStorage.getItem('language');
+                  if (storedLang) {
+                    document.documentElement.lang = storedLang;
+                  }
                 } catch (e) {}
               })();
             `,
@@ -51,7 +56,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <LanguageProvider>
+          {children}
+        </LanguageProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

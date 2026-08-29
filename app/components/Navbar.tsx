@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
-import { Menu, X, ArrowUpRight, Sun, Moon } from "lucide-react";
+import { Menu, X, ArrowUpRight, Sun, Moon, Globe } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLanguage } from "~/context/LanguageContext";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const { language, toggleLanguage, t } = useLanguage();
 
   // Initialize and sync theme
   useEffect(() => {
@@ -61,13 +63,13 @@ export function Navbar() {
   }, []);
 
   const navLinks = [
-    { name: "Home", href: "#home" },
-    { name: "About", href: "#about" },
-    { name: "Skills", href: "#skills" },
-    { name: "Projects", href: "#projects" },
-    { name: "Journey", href: "#experience" },
-    { name: "Testimonials", href: "#testimonials" },
-    { name: "Contact", href: "#contact" },
+    { name: t.nav.home, href: "#home" },
+    { name: t.nav.about, href: "#about" },
+    { name: t.nav.skills, href: "#skills" },
+    { name: t.nav.projects, href: "#projects" },
+    { name: t.nav.journey, href: "#experience" },
+    { name: t.nav.testimonials, href: "#testimonials" },
+    { name: t.nav.contact, href: "#contact" },
   ];
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -117,7 +119,7 @@ export function Navbar() {
               KERO AMIR
             </span>
             <span className="text-[10px] text-[var(--text-muted)] tracking-wider font-light uppercase hidden sm:block">
-              Graphic Designer
+              {t.nav.role}
             </span>
           </div>
         </a>
@@ -126,10 +128,10 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-1 bg-[var(--pill-bg)] backdrop-blur-md p-1.5 rounded-full border border-[var(--pill-border)] shadow-inner">
           {navLinks.map((link) => (
             <a
-              key={link.name}
+              key={link.href}
               href={link.href}
               onClick={(e) => handleLinkClick(e, link.href)}
-              className={`px-4.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-300 ease-out ${
+              className={`px-4 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider transition-all duration-300 ease-out ${
                 activeSection === link.href.replace("#", "")
                   ? "bg-[#8A60F1] text-white shadow-[0_0_15px_rgba(138,96,241,0.4)]"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--pill-hover-bg)]"
@@ -140,8 +142,19 @@ export function Navbar() {
           ))}
         </div>
 
-        {/* Desktop Actions & Theme Toggle */}
-        <div className="hidden md:flex items-center gap-3">
+        {/* Desktop Actions, Language Switcher & Theme Toggle */}
+        <div className="hidden md:flex items-center gap-2.5">
+          {/* Language Switcher Button */}
+          <button
+            onClick={toggleLanguage}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-[var(--pill-bg)] border border-[var(--pill-border)] hover:border-[#8A60F1]/50 text-[var(--text-primary)] hover:text-[#8A60F1] transition-all duration-300 hover:scale-105 cursor-pointer shadow-sm text-xs font-bold tracking-wider font-mono"
+            aria-label="Toggle language"
+            title={language === "en" ? "Auf Deutsch umschalten" : "Switch to English"}
+          >
+            <Globe className="w-3.5 h-3.5 text-[#8A60F1]" />
+            <span>{language === "en" ? "DE 🇩🇪" : "EN 🇬🇧"}</span>
+          </button>
+
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
@@ -162,13 +175,24 @@ export function Navbar() {
             onClick={(e) => handleLinkClick(e, "#contact")}
             className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#8A60F1] to-fuchsia-600 hover:from-[#7b51e0] hover:to-fuchsia-700 text-white font-semibold text-sm transition-all duration-300 hover:shadow-[0_0_20px_rgba(138,96,241,0.5)] group hover:scale-[1.03] active:scale-[0.98]"
           >
-            Hire Me
+            {t.nav.hireMe}
             <ArrowUpRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </a>
         </div>
 
-        {/* Mobile Menu & Theme Controls */}
+        {/* Mobile Menu & Controls */}
         <div className="flex items-center gap-2 md:hidden">
+          {/* Mobile Language Button */}
+          <button
+            onClick={toggleLanguage}
+            className="px-2.5 py-1.5 rounded-xl bg-[var(--pill-bg)] border border-[var(--pill-border)] text-[var(--text-primary)] text-xs font-bold font-mono transition-colors cursor-pointer flex items-center gap-1"
+            aria-label="Toggle language"
+          >
+            <Globe className="w-3.5 h-3.5 text-[#8A60F1]" />
+            <span>{language === "en" ? "DE" : "EN"}</span>
+          </button>
+
+          {/* Mobile Theme Button */}
           <button
             onClick={toggleTheme}
             className="p-2 rounded-xl bg-[var(--pill-bg)] border border-[var(--pill-border)] text-[var(--text-primary)] transition-colors cursor-pointer"
@@ -204,7 +228,7 @@ export function Navbar() {
             <div className="px-6 py-4 flex flex-col gap-3">
               {navLinks.map((link) => (
                 <a
-                  key={link.name}
+                  key={link.href}
                   href={link.href}
                   onClick={(e) => handleLinkClick(e, link.href)}
                   className={`px-4 py-3 rounded-xl text-base font-semibold transition-all ${
@@ -221,7 +245,7 @@ export function Navbar() {
                 onClick={(e) => handleLinkClick(e, "#contact")}
                 className="flex items-center justify-center gap-1 mt-2 px-4 py-3 rounded-xl bg-gradient-to-r from-[#8A60F1] to-fuchsia-600 text-white font-semibold text-center hover:scale-[1.01] transition-all"
               >
-                Hire Me
+                {t.nav.hireMe}
                 <ArrowUpRight className="w-4 h-4" />
               </a>
             </div>

@@ -1,10 +1,13 @@
 import { ScrollReveal } from "./ScrollReveal";
 import { Palette, PenTool, Sparkles, Layers, Video, Award } from "lucide-react";
+import { useLanguage } from "~/context/LanguageContext";
 
 export function Skills() {
+  const { t } = useLanguage();
+
   const skillCategories = [
     {
-      title: "Adobe Creative Cloud Mastery",
+      title: t.skills.categories.adobe,
       badge: "Core Mastery",
       icon: <Palette className="w-5 h-5 text-[#8A60F1]" />,
       skills: [
@@ -19,7 +22,7 @@ export function Skills() {
       ],
     },
     {
-      title: "Brand Identity & Creative Direction",
+      title: t.skills.categories.brand,
       badge: "Specialization",
       icon: <PenTool className="w-5 h-5 text-[#8A60F1]" />,
       skills: [
@@ -34,7 +37,7 @@ export function Skills() {
       ],
     },
     {
-      title: "Motion & Digital Art Direction",
+      title: t.skills.categories.motion,
       badge: "Visual Craft",
       icon: <Layers className="w-5 h-5 text-[#8A60F1]" />,
       skills: [
@@ -59,16 +62,16 @@ export function Skills() {
         {/* Section Header */}
         <ScrollReveal variant="fade-in-up" className="space-y-4 max-w-2xl">
           <span className="text-xs font-mono font-bold tracking-widest text-[#8A60F1] uppercase bg-[#8A60F1]/10 px-3 py-1.5 rounded-md border border-[#8A60F1]/20 inline-block shadow-[0_0_15px_rgba(138,96,241,0.1)]">
-            02 // TOOLKIT & MASTERY
+            {t.skills.tag}
           </span>
           <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-            Adobe Creative Cloud & <br />
+            {t.skills.titleLine1} <br />
             <span className="bg-gradient-to-r from-[#8A60F1] to-fuchsia-500 bg-clip-text text-transparent">
-              visual craft mastery
+              {t.skills.titleGradient}
             </span>
           </h2>
           <p className="text-lg text-[var(--text-secondary)] leading-relaxed font-light">
-            With deep command over the industry-leading Adobe Creative suite, I transform abstract concepts into unforgettable visual masterpieces.
+            {t.skills.description}
           </p>
         </ScrollReveal>
 
@@ -109,9 +112,9 @@ export function Skills() {
 
                 <div className="mt-8 pt-4 border-t border-[var(--card-border)] flex items-center justify-between text-xs text-[var(--text-muted)]">
                   <span className="flex items-center gap-1.5 text-[#8A60F1] font-semibold">
-                    <Award className="w-3.5 h-3.5" /> Expert Level
+                    <Award className="w-3.5 h-3.5" /> {t.skills.expertLevel}
                   </span>
-                  <span>100% Production Ready</span>
+                  <span>{t.skills.productionReady}</span>
                 </div>
               </div>
             </ScrollReveal>

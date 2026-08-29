@@ -1,10 +1,10 @@
 import { useState, useRef } from "react";
 import { ExternalLink } from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
+import { useLanguage } from "~/context/LanguageContext";
 
 interface ProjectItem {
-  title: string;
-  description: string;
+  id: number;
   category: string;
   image: string;
   tags: string[];
@@ -14,19 +14,19 @@ interface ProjectItem {
 
 export function Projects() {
   const [filter, setFilter] = useState("all");
+  const { t } = useLanguage();
 
   const categories = [
-    { id: "all", name: "All Works" },
-    { id: "branding", name: "Brand Identity" },
-    { id: "packaging", name: "Packaging & 3D" },
-    { id: "advertising", name: "Ad Campaigns & Social" },
-    { id: "editorial", name: "Editorial & Print" },
+    { id: "all", name: t.projects.categories.all },
+    { id: "branding", name: t.projects.categories.branding },
+    { id: "packaging", name: t.projects.categories.packaging },
+    { id: "advertising", name: t.projects.categories.advertising },
+    { id: "editorial", name: t.projects.categories.editorial },
   ];
 
-  const projectList: ProjectItem[] = [
+  const projectMeta: ProjectItem[] = [
     {
-      title: "Aura Luxe — Haute Horlogerie Brand Identity",
-      description: "Complete luxury brand identity, custom serif typography, foil-stamped business stationary, and high-fidelity guidelines designed for a boutique watchmaker.",
+      id: 1,
       category: "branding",
       image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=800",
       tags: ["Adobe Illustrator", "Photoshop", "Brand System", "Typography"],
@@ -34,8 +34,7 @@ export function Projects() {
       viewUrl: "#",
     },
     {
-      title: "Kronos Botanic — Sustainable Beverage Packaging",
-      description: "Photorealistic 3D can mockups, custom vector flora patterns, and vibrant die-line label engineering for an organic botanical beverage launch in Berlin.",
+      id: 2,
       category: "packaging",
       image: "https://images.unsplash.com/photo-1556742049-0a67c55c8cc0?auto=format&fit=crop&q=80&w=800",
       tags: ["Adobe Dimension", "Illustrator", "Packaging", "3D Render"],
@@ -43,8 +42,7 @@ export function Projects() {
       viewUrl: "#",
     },
     {
-      title: "Vortex Kinetic — Music Festival Art Direction",
-      description: "High-octane visual identity, animated kinetic typography posters in After Effects, and large-format outdoor billboards for a 3-day music festival in California.",
+      id: 3,
       category: "advertising",
       image: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=800",
       tags: ["After Effects", "Photoshop", "Motion Graphics", "Billboards"],
@@ -52,8 +50,7 @@ export function Projects() {
       viewUrl: "#",
     },
     {
-      title: "Nefertiti Archive — Heritage Editorial Art Book",
-      description: "A 180-page luxury coffee table book layout, gold-embossed hardcover binding, and archival photo retouching celebrating Egyptian historical heritage.",
+      id: 4,
       category: "editorial",
       image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=800",
       tags: ["Adobe InDesign", "Photoshop", "Editorial Design", "Pre-Press"],
@@ -61,8 +58,7 @@ export function Projects() {
       viewUrl: "#",
     },
     {
-      title: "Apex Velocity — Electric Supercar Ad Campaign",
-      description: "High-impact social media advertising suite, digital billboard banners, and multi-page promotional brochure for a German automotive manufacturer.",
+      id: 5,
       category: "advertising",
       image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800",
       tags: ["Photoshop", "Illustrator", "Art Direction", "Social Media"],
@@ -70,8 +66,7 @@ export function Projects() {
       viewUrl: "#",
     },
     {
-      title: "L'Élixir Parfums — Luxury Fragrance Packaging",
-      description: "Sophisticated embossed gift packaging, custom monogram icon, and photorealistic 3D perfume bottle renderings for a French luxury fragrance house.",
+      id: 6,
       category: "packaging",
       image: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&q=80&w=800",
       tags: ["Adobe Dimension", "Illustrator", "Packaging", "Luxury Branding"],
@@ -82,8 +77,8 @@ export function Projects() {
 
   const filteredProjects =
     filter === "all"
-      ? projectList
-      : projectList.filter((project) => project.category === filter);
+      ? projectMeta
+      : projectMeta.filter((project) => project.category === filter);
 
   return (
     <section id="projects" className="py-32 px-6 md:px-12 relative overflow-hidden bg-grid-cyber transition-colors duration-350">
@@ -95,13 +90,13 @@ export function Projects() {
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
           <ScrollReveal variant="fade-in-up" className="space-y-4 max-w-xl">
             <span className="text-xs font-mono font-bold tracking-widest text-[#8A60F1] uppercase bg-[#8A60F1]/10 px-3 py-1.5 rounded-md border border-[#8A60F1]/20 inline-block shadow-[0_0_15px_rgba(138,96,241,0.1)]">
-              03 // SELECTED CREATIONS
+              {t.projects.tag}
             </span>
             <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-              Curated <span className="font-semibold italic bg-gradient-to-r from-[#8A60F1] to-fuchsia-500 bg-clip-text text-transparent">portfolio</span>
+              {t.projects.titleLine1} <span className="font-semibold italic bg-gradient-to-r from-[#8A60F1] to-fuchsia-500 bg-clip-text text-transparent">{t.projects.titleGradient}</span>
             </h2>
             <p className="text-[var(--text-secondary)] font-light leading-relaxed">
-              Explore standout visual identities, 3D packaging mockups, advertising campaigns, and editorial masterpieces from over 200+ completed projects.
+              {t.projects.description}
             </p>
           </ScrollReveal>
 
@@ -127,23 +122,34 @@ export function Projects() {
 
         {/* Project Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredProjects.map((project, idx) => (
-            <ScrollReveal
-              key={`${filter}-${idx}`}
-              variant="fade-in-up"
-              delay={idx * 100}
-              className="h-full flex"
-            >
-              <ProjectCard project={project} />
-            </ScrollReveal>
-          ))}
+          {filteredProjects.map((project, idx) => {
+            const projectText = t.projects.items.find((item) => item.id === project.id) || t.projects.items[0];
+            return (
+              <ScrollReveal
+                key={`${filter}-${idx}`}
+                variant="fade-in-up"
+                delay={idx * 100}
+                className="h-full flex"
+              >
+                <ProjectCard project={project} text={projectText} inquireLabel={t.projects.inquireBtn} />
+              </ScrollReveal>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-function ProjectCard({ project }: { project: ProjectItem }) {
+function ProjectCard({
+  project,
+  text,
+  inquireLabel,
+}: {
+  project: ProjectItem;
+  text: { title: string; description: string };
+  inquireLabel: string;
+}) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [rotateX, setRotateX] = useState(0);
   const [rotateY, setRotateY] = useState(0);
@@ -183,7 +189,7 @@ function ProjectCard({ project }: { project: ProjectItem }) {
       <div className="relative overflow-hidden aspect-[4/3] bg-slate-900 border-b border-[var(--card-border)]">
         <img
           src={project.image}
-          alt={project.title}
+          alt={text.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out opacity-90 group-hover:opacity-100"
           loading="lazy"
         />
@@ -194,7 +200,7 @@ function ProjectCard({ project }: { project: ProjectItem }) {
               href="#contact"
               className="flex-1 py-2.5 rounded-xl bg-white text-slate-950 hover:bg-slate-100 text-xs font-bold text-center flex items-center justify-center gap-1.5 shadow-md transition-all hover:scale-[1.02]"
             >
-              Inquire Project <ExternalLink className="w-3.5 h-3.5" />
+              {inquireLabel} <ExternalLink className="w-3.5 h-3.5" />
             </a>
           </div>
         </div>
@@ -220,10 +226,10 @@ function ProjectCard({ project }: { project: ProjectItem }) {
           </div>
 
           <h4 className="text-lg font-bold text-[var(--text-primary)] tracking-wide group-hover:text-[#8A60F1] transition-colors">
-            {project.title}
+            {text.title}
           </h4>
           <p className="text-xs text-[var(--text-secondary)] leading-relaxed font-light">
-            {project.description}
+            {text.description}
           </p>
         </div>
 

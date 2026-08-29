@@ -19,6 +19,8 @@ html.dark {
   --text-secondary: #d1d5db;
   --text-muted: #9ca3af;
   --card-bg: rgba(10, 11, 34, 0.55);
+  --card-solid-bg: #0b0d22;
+  --card-solid-body: #0e112d;
   --card-border: rgba(138, 96, 241, 0.18);
   --card-hover-bg: rgba(138, 96, 241, 0.09);
   --card-hover-border: rgba(138, 96, 241, 0.45);
@@ -43,6 +45,8 @@ html.light {
   --text-secondary: #334155;
   --text-muted: #64748b;
   --card-bg: rgba(255, 255, 255, 0.88);
+  --card-solid-bg: #ffffff;
+  --card-solid-body: #f8fafc;
   --card-border: rgba(138, 96, 241, 0.22);
   --card-hover-bg: rgba(255, 255, 255, 0.98);
   --card-hover-border: rgba(138, 96, 241, 0.55);

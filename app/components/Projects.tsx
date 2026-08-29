@@ -657,24 +657,30 @@ function SwipeableCard({
         stiffness: 350,
         damping: 28,
       }}
-      className={`glass-card rounded-3xl overflow-hidden flex flex-col justify-between border border-[#8A60F1]/30 bg-[var(--card-bg)] select-none ${
+      className={`rounded-3xl overflow-hidden flex flex-col justify-between border-2 border-[#8A60F1]/35 shadow-[0_20px_50px_rgba(0,0,0,0.7)] select-none transition-colors duration-300 ${
+        offset === 0
+          ? "bg-[#0d102b] dark:bg-[#0c0e28] light:bg-[#ffffff]"
+          : offset === 1
+          ? "bg-[#090b20] dark:bg-[#08091e] light:bg-[#f1f5f9]"
+          : "bg-[#060716] dark:bg-[#050616] light:bg-[#e2e8f0]"
+      } ${
         isTop
-          ? "cursor-grab active:cursor-grabbing hover:border-[#8A60F1]/60"
+          ? "cursor-grab active:cursor-grabbing hover:border-[#8A60F1]/70"
           : "pointer-events-none"
       }`}
     >
       {/* Dynamic Colored Glow Dropshadow */}
       <div
-        className="absolute -inset-2 rounded-3xl opacity-30 blur-2xl pointer-events-none -z-10 transition-opacity duration-300"
+        className="absolute -inset-2 rounded-3xl opacity-35 blur-2xl pointer-events-none -z-10 transition-opacity duration-300"
         style={{ backgroundColor: accent }}
       />
 
       {/* Dynamic Holographic Specular Sheen on Cursor Hover */}
       {isTop && (
         <motion.div
-          className="absolute inset-0 pointer-events-none z-30 opacity-40 mix-blend-overlay transition-opacity"
+          className="absolute inset-0 pointer-events-none z-30 opacity-30 mix-blend-overlay transition-opacity"
           style={{
-            background: `radial-gradient(circle 320px at ${shineX} ${shineY}, rgba(255, 255, 255, 0.45), transparent 70%)`,
+            background: `radial-gradient(circle 340px at ${shineX} ${shineY}, rgba(255, 255, 255, 0.4), transparent 70%)`,
           }}
         />
       )}
@@ -684,7 +690,7 @@ function SwipeableCard({
         <>
           <motion.div
             style={{ opacity: nextBadgeOpacity, scale: nextBadgeScale }}
-            className="absolute top-8 right-8 z-40 px-4 py-2 rounded-2xl border-2 border-fuchsia-400 bg-fuchsia-500/25 text-fuchsia-200 font-extrabold text-xs md:text-sm uppercase tracking-widest backdrop-blur-md shadow-[0_0_25px_rgba(217,70,239,0.5)] rotate-6 pointer-events-none flex items-center gap-2"
+            className="absolute top-8 right-8 z-40 px-4 py-2 rounded-2xl border-2 border-fuchsia-400 bg-fuchsia-600 text-white font-extrabold text-xs md:text-sm uppercase tracking-widest shadow-[0_0_25px_rgba(217,70,239,0.7)] rotate-6 pointer-events-none flex items-center gap-2"
           >
             <span>{nextLabel || "NEXT"}</span>
             <ArrowRight className="w-4 h-4" />
@@ -692,7 +698,7 @@ function SwipeableCard({
 
           <motion.div
             style={{ opacity: prevBadgeOpacity, scale: prevBadgeScale }}
-            className="absolute top-8 left-8 z-40 px-4 py-2 rounded-2xl border-2 border-cyan-400 bg-cyan-500/25 text-cyan-200 font-extrabold text-xs md:text-sm uppercase tracking-widest backdrop-blur-md shadow-[0_0_25px_rgba(6,182,212,0.5)] -rotate-6 pointer-events-none flex items-center gap-2"
+            className="absolute top-8 left-8 z-40 px-4 py-2 rounded-2xl border-2 border-cyan-400 bg-cyan-600 text-white font-extrabold text-xs md:text-sm uppercase tracking-widest shadow-[0_0_25px_rgba(6,182,212,0.7)] -rotate-6 pointer-events-none flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>{prevLabel || "PREV"}</span>
@@ -701,7 +707,7 @@ function SwipeableCard({
       )}
 
       {/* Top Artwork Image Container */}
-      <div className="relative aspect-[16/10] bg-slate-950 overflow-hidden border-b border-[var(--card-border)] pointer-events-none">
+      <div className="relative aspect-[16/10] bg-slate-950 overflow-hidden border-b border-[#8A60F1]/20 pointer-events-none">
         <img
           src={project.image}
           alt={resolvedTitle}
@@ -709,35 +715,35 @@ function SwipeableCard({
           className="w-full h-full object-cover select-none pointer-events-none"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
 
         {/* Top Badges */}
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20 pointer-events-none">
-          <span className="px-3.5 py-1 rounded-xl bg-black/60 backdrop-blur-md text-[#8A60F1] font-extrabold text-[10px] uppercase tracking-widest border border-[#8A60F1]/30 shadow-md">
+          <span className="px-3.5 py-1 rounded-xl bg-black/85 backdrop-blur-md text-[#8A60F1] font-extrabold text-[10px] uppercase tracking-widest border border-[#8A60F1]/40 shadow-md">
             {project.category}
           </span>
-          <span className="px-3 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white font-mono text-[11px] font-bold border border-white/15 shadow-md">
+          <span className="px-3 py-1 rounded-xl bg-black/85 backdrop-blur-md text-white font-mono text-[11px] font-bold border border-white/20 shadow-md">
             {project.countryFlag} {project.year}
           </span>
         </div>
 
         {/* Floating Accent Color Dot */}
         <div
-          className="absolute bottom-4 right-4 w-3.5 h-3.5 rounded-full shadow-[0_0_12px_currentColor] pointer-events-none"
+          className="absolute bottom-4 right-4 w-4 h-4 rounded-full shadow-[0_0_15px_currentColor] border border-white/40 pointer-events-none"
           style={{ backgroundColor: accent }}
         />
       </div>
 
-      {/* Card Info Body */}
-      <div className="p-6 md:p-8 flex-grow flex flex-col justify-between space-y-6">
+      {/* Card Info Body - Solid Background */}
+      <div className="p-6 md:p-8 flex-grow flex flex-col justify-between space-y-6 bg-[#0f1334] dark:bg-[#0f1230] light:bg-[#f8fafc]">
         <div className="space-y-3 pointer-events-none">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-mono text-[var(--text-muted)] flex items-center gap-1.5">
+            <span className="text-xs font-mono text-[var(--text-muted)] flex items-center gap-1.5 font-semibold">
               <Compass className="w-3.5 h-3.5 text-[#8A60F1]" />
               {resolvedLocation}
             </span>
             {resolvedDeliverables[0] && (
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A60F1] px-2.5 py-0.5 rounded-md bg-[#8A60F1]/10 border border-[#8A60F1]/20">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A60F1] px-2.5 py-0.5 rounded-lg bg-[#8A60F1]/15 border border-[#8A60F1]/30">
                 {resolvedDeliverables[0]}
               </span>
             )}
@@ -747,7 +753,7 @@ function SwipeableCard({
             {resolvedTitle}
           </h3>
 
-          <p className="text-xs md:text-sm text-[var(--text-secondary)] leading-relaxed font-light line-clamp-3">
+          <p className="text-xs md:text-sm text-[var(--text-secondary)] leading-relaxed font-normal line-clamp-3">
             {resolvedDesc}
           </p>
         </div>
@@ -758,7 +764,7 @@ function SwipeableCard({
             {project.software.slice(0, 3).map((sw, sIdx) => (
               <span
                 key={sIdx}
-                className="px-2.5 py-1 rounded-lg bg-[var(--pill-bg)] border border-[var(--pill-border)] text-[10px] font-medium text-[var(--text-primary)] shadow-sm flex items-center gap-1"
+                className="px-2.5 py-1 rounded-lg bg-[#161a42] dark:bg-[#14173c] light:bg-slate-200 border border-[#8A60F1]/30 text-[10px] font-semibold text-[var(--text-primary)] shadow-sm flex items-center gap-1"
               >
                 <Layers className="w-3 h-3 text-[#8A60F1]" />
                 {sw}
@@ -773,7 +779,7 @@ function SwipeableCard({
                 onOpenPreview();
               }}
               onPointerDown={(e) => e.stopPropagation()}
-              className="px-4 py-2.5 rounded-xl glass-card hover:border-[#8A60F1] text-xs font-bold text-[var(--text-primary)] hover:text-[#8A60F1] transition-all cursor-pointer flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-xl bg-[#161a42] hover:bg-[#1d2258] dark:bg-[#14173c] light:bg-white border border-[#8A60F1]/40 text-xs font-bold text-[var(--text-primary)] hover:text-[#8A60F1] transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
             >
               <Eye className="w-3.5 h-3.5" />
               <span>{viewDetailsText}</span>
@@ -796,7 +802,7 @@ function SwipeableCard({
 }
 
 // ----------------------------------------------------------------------------
-// Grid View Project Card with 3D Spotlight Tilt
+// Grid View Project Card with 3D Spotlight Tilt (Solid Color Styling)
 // ----------------------------------------------------------------------------
 function GridProjectCard({
   project,
@@ -850,7 +856,7 @@ function GridProjectCard({
         rotateY,
         transformStyle: "preserve-3d",
       }}
-      className="glass-card rounded-3xl overflow-hidden flex flex-col justify-between group hover:border-[#8A60F1]/60 transition-all duration-300 hover:-translate-y-1.5 shadow-lg relative"
+      className="rounded-3xl overflow-hidden flex flex-col justify-between group bg-[#0d102b] dark:bg-[#0c0e28] light:bg-[#ffffff] border-2 border-[#8A60F1]/30 hover:border-[#8A60F1]/70 transition-all duration-300 hover:-translate-y-1.5 shadow-[0_15px_35px_rgba(0,0,0,0.5)] relative"
     >
       {/* Artwork */}
       <div
@@ -862,37 +868,39 @@ function GridProjectCard({
           alt={title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30" />
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-          <span className="px-3 py-1 rounded-xl bg-black/60 backdrop-blur-md text-[#8A60F1] border border-[#8A60F1]/30 text-[10px] font-bold uppercase tracking-wider">
+          <span className="px-3 py-1 rounded-xl bg-black/80 backdrop-blur-md text-[#8A60F1] border border-[#8A60F1]/40 text-[10px] font-bold uppercase tracking-wider">
             {project.category}
           </span>
-          <span className="px-2.5 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white text-xs font-mono font-bold">
+          <span className="px-2.5 py-1 rounded-xl bg-black/80 backdrop-blur-md text-white text-xs font-mono font-bold">
             {project.countryFlag} {project.year}
           </span>
         </div>
       </div>
 
-      <div className="p-6 space-y-4">
-        <h4
-          onClick={onOpenPreview}
-          className="text-lg font-bold text-[var(--text-primary)] group-hover:text-[#8A60F1] transition-colors cursor-pointer line-clamp-1"
-        >
-          {title}
-        </h4>
-        <p className="text-xs text-[var(--text-secondary)] font-light leading-relaxed line-clamp-2">
-          {description}
-        </p>
+      <div className="p-6 space-y-4 bg-[#0f1334] dark:bg-[#0f1230] light:bg-[#f8fafc] flex-grow flex flex-col justify-between">
+        <div className="space-y-2">
+          <h4
+            onClick={onOpenPreview}
+            className="text-lg font-bold text-[var(--text-primary)] group-hover:text-[#8A60F1] transition-colors cursor-pointer line-clamp-1"
+          >
+            {title}
+          </h4>
+          <p className="text-xs text-[var(--text-secondary)] font-normal leading-relaxed line-clamp-2">
+            {description}
+          </p>
+        </div>
 
         <div className="pt-3 border-t border-[var(--card-border)] flex items-center justify-between">
-          <span className="text-xs font-mono text-[var(--text-muted)] flex items-center gap-1">
+          <span className="text-xs font-mono text-[var(--text-muted)] flex items-center gap-1 font-semibold">
             <Compass className="w-3.5 h-3.5 text-[#8A60F1]" />
             {location}
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={onOpenPreview}
-              className="p-1.5 rounded-lg glass-card hover:text-[#8A60F1] text-xs transition-colors cursor-pointer"
+              className="p-2 rounded-xl bg-[#161a42] hover:bg-[#1d2258] dark:bg-[#14173c] light:bg-white text-[var(--text-primary)] hover:text-[#8A60F1] border border-[#8A60F1]/30 text-xs transition-colors cursor-pointer"
               title="Quick Preview"
             >
               <Eye className="w-3.5 h-3.5" />

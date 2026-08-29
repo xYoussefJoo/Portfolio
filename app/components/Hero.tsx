@@ -3,12 +3,14 @@ import { Mail } from "lucide-react";
 import * as THREE from "three";
 import { motion } from "framer-motion";
 import { useLanguage } from "~/context/LanguageContext";
+import { usePortfolioData } from "~/context/PortfolioDataContext";
 
 export function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const { t } = useLanguage();
+  const { getSection } = usePortfolioData();
 
   useEffect(() => {
     setMounted(true);
@@ -394,7 +396,7 @@ export function Hero() {
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8A60F1]/10 border border-[#8A60F1]/20 text-xs font-semibold uppercase tracking-wider text-[#8A60F1] shadow-[0_0_15px_rgba(138,96,241,0.1)]"
           >
             <span className="w-2 h-2 rounded-full bg-[#8A60F1] animate-pulse" />
-            {t.hero.badge}
+            {getSection("hero_badge", t.hero.badge)}
           </motion.div>
 
           <div className="space-y-4">
@@ -404,9 +406,9 @@ export function Hero() {
               transition={{ duration: 0.6, delay: 0.15 }}
               className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] text-[var(--text-primary)]"
             >
-              {t.hero.titleLine1} <br />
+              {getSection("hero_title_line1", t.hero.titleLine1)} <br />
               <span className="bg-gradient-to-r from-[#8A60F1] via-fuchsia-400 to-[#00f0ff] bg-clip-text text-transparent text-glow-purple">
-                {t.hero.titleGradient}
+                {getSection("hero_title_gradient", t.hero.titleGradient)}
               </span>
             </motion.h1>
 
@@ -416,7 +418,7 @@ export function Hero() {
               transition={{ duration: 0.6, delay: 0.3 }}
               className="text-lg md:text-xl text-[var(--text-secondary)] font-normal max-w-xl leading-relaxed"
             >
-              {t.hero.intro}
+              {getSection("hero_intro", t.hero.intro)}
             </motion.p>
           </div>
 
@@ -429,15 +431,15 @@ export function Hero() {
           >
             <span className="px-3.5 py-1.5 rounded-xl bg-[var(--pill-bg)] border border-[var(--pill-border)] text-xs text-[var(--text-secondary)] font-medium flex items-center gap-1.5 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              {t.hero.statProjects}
+              {getSection("hero_stat_projects", t.hero.statProjects)}
             </span>
             <span className="px-3.5 py-1.5 rounded-xl bg-[var(--pill-bg)] border border-[var(--pill-border)] text-xs text-[var(--text-secondary)] font-medium flex items-center gap-1.5 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-[#8A60F1]"></span>
-              {t.hero.statAdobe}
+              {getSection("hero_stat_adobe", t.hero.statAdobe)}
             </span>
             <span className="px-3.5 py-1.5 rounded-xl bg-[var(--pill-bg)] border border-[var(--pill-border)] text-xs text-[var(--text-secondary)] font-medium flex items-center gap-1.5 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
-              {t.hero.statLanguages}
+              {getSection("hero_stat_languages", t.hero.statLanguages)}
             </span>
           </motion.div>
 

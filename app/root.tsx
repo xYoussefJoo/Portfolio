@@ -9,6 +9,7 @@ import {
 
 import type { Route } from "./+types/root";
 import { LanguageProvider } from "./context/LanguageContext";
+import { PortfolioDataProvider } from "./context/PortfolioDataContext";
 import "./app.css";
 
 export const links: Route.LinksFunction = () => [
@@ -57,7 +58,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <LanguageProvider>
-          {children}
+          <PortfolioDataProvider>
+            {children}
+          </PortfolioDataProvider>
         </LanguageProvider>
         <ScrollRestoration />
         <Scripts />

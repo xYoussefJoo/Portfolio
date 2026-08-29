@@ -1,9 +1,11 @@
 import { ScrollReveal } from "./ScrollReveal";
 import { CheckCircle, Globe, Palette, Sparkles } from "lucide-react";
 import { useLanguage } from "~/context/LanguageContext";
+import { usePortfolioData } from "~/context/PortfolioDataContext";
 
 export function About() {
   const { t } = useLanguage();
+  const { getSection } = usePortfolioData();
 
   const stats = [
     t.about.stats.years,
@@ -21,16 +23,16 @@ export function About() {
         {/* Section Header */}
         <ScrollReveal variant="fade-in-up" className="space-y-4 max-w-3xl">
           <span className="text-xs font-mono font-bold tracking-widest text-[#8A60F1] uppercase bg-[#8A60F1]/10 px-3 py-1.5 rounded-md border border-[#8A60F1]/20 inline-block shadow-[0_0_15px_rgba(138,96,241,0.1)]">
-            {t.about.tag}
+            {getSection("about_tag", t.about.tag)}
           </span>
           <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
-            {t.about.titleLine1} <br />
+            {getSection("about_title_line1", t.about.titleLine1)} <br />
             <span className="bg-gradient-to-r from-[#8A60F1] to-fuchsia-500 bg-clip-text text-transparent">
-              {t.about.titleGradient}
+              {getSection("about_title_gradient", t.about.titleGradient)}
             </span>
           </h2>
           <p className="text-lg text-[var(--text-secondary)] leading-relaxed font-light">
-            {t.about.description}
+            {getSection("about_description", t.about.description)}
           </p>
         </ScrollReveal>
 
@@ -50,10 +52,10 @@ export function About() {
                 </div>
 
                 <p className="text-[var(--text-secondary)] leading-relaxed font-light">
-                  {t.about.philosophyP1}
+                  {getSection("about_philosophy_p1", t.about.philosophyP1)}
                 </p>
                 <p className="text-[var(--text-secondary)] leading-relaxed font-light">
-                  {t.about.philosophyP2}
+                  {getSection("about_philosophy_p2", t.about.philosophyP2)}
                 </p>
 
                 {/* Multilingual Badge */}

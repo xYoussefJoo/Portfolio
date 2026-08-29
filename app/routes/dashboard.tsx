@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Route } from "./+types/dashboard";
 import { motion, AnimatePresence } from "framer-motion";
 import { DashboardHeader } from "~/components/dashboard/DashboardHeader";
+import { ProjectsManager } from "~/components/dashboard/ProjectsManager";
 import { FeedbackModeration } from "~/components/dashboard/FeedbackModeration";
 import { ContentEditor } from "~/components/dashboard/ContentEditor";
 import { SocialLinksEditor } from "~/components/dashboard/SocialLinksEditor";
@@ -15,14 +16,14 @@ export function meta({}: Route.MetaArgs) {
     { title: "Portfolio Admin Dashboard | Kero Amir" },
     {
       name: "description",
-      content: "Protected management dashboard for live portfolio content, client feedback moderation, and social channels.",
+      content: "Protected management dashboard for live showcase projects, portfolio content, client feedback moderation, and social channels.",
     },
   ];
 }
 
 export default function Dashboard() {
   const { user, isAuthLoading } = usePortfolioData();
-  const [activeTab, setActiveTab] = useState<"feedback" | "content" | "social" | "sql">("feedback");
+  const [activeTab, setActiveTab] = useState<"projects" | "feedback" | "content" | "social" | "sql">("projects");
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -67,6 +68,17 @@ export default function Dashboard() {
 
         {/* Tab Panels */}
         <main className="min-h-[500px]">
+          {activeTab === "projects" && (
+            <motion.div
+              key="projects"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ProjectsManager />
+            </motion.div>
+          )}
+
           {activeTab === "feedback" && (
             <motion.div
               key="feedback"
@@ -136,7 +148,7 @@ export default function Dashboard() {
                   Supabase Database Schema
                 </h3>
                 <p className="text-xs text-[var(--text-secondary)]">
-                  Copy and paste this script into your Supabase Dashboard SQL Editor.
+                  Copy and paste this script into your Supabase Dashboard SQL Editor to create all tables (projects, feedback, sections, social_links).
                 </p>
               </div>
 
@@ -148,7 +160,7 @@ export default function Dashboard() {
 
               <div className="pt-4 flex items-center justify-between gap-4">
                 <span className="text-xs font-mono text-[var(--text-muted)]">
-                  Tables: sections, feedback, social_links
+                  Tables: projects, sections, feedback, social_links
                 </span>
 
                 <button

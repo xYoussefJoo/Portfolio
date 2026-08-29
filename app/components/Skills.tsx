@@ -8,7 +8,7 @@ export function Skills() {
   const skillCategories = [
     {
       title: t.skills.categories.adobe,
-      badge: "Core Mastery",
+      badge: t.skills.badges.adobe,
       icon: <Palette className="w-5 h-5 text-[#8A60F1]" />,
       skills: [
         "Adobe Photoshop",
@@ -23,7 +23,7 @@ export function Skills() {
     },
     {
       title: t.skills.categories.brand,
-      badge: "Specialization",
+      badge: t.skills.badges.brand,
       icon: <PenTool className="w-5 h-5 text-[#8A60F1]" />,
       skills: [
         "Brand Identity Systems",
@@ -38,7 +38,7 @@ export function Skills() {
     },
     {
       title: t.skills.categories.motion,
-      badge: "Visual Craft",
+      badge: t.skills.badges.motion,
       icon: <Layers className="w-5 h-5 text-[#8A60F1]" />,
       skills: [
         "Motion Graphics & Intro",

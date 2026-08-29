@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   ExternalLink,
   ChevronLeft,
@@ -15,30 +15,32 @@ import {
   MoveHorizontal,
   Flame,
   MousePointer2,
+  Eye,
+  X,
+  CheckCircle2,
 } from "lucide-react";
-import { motion, AnimatePresence, useMotionValue, useTransform, animate, type PanInfo } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useTransform,
+  useSpring,
+  animate,
+  type PanInfo,
+} from "framer-motion";
 import { ScrollReveal } from "./ScrollReveal";
 import { useLanguage } from "~/context/LanguageContext";
-
-interface ProjectItem {
-  id: number;
-  category: string;
-  image: string;
-  tags: string[];
-  clientLocation: string;
-  countryFlag: string;
-  year: string;
-  accentColor: string;
-  software: string[];
-  deliverables: string[];
-}
+import { usePortfolioData } from "~/context/PortfolioDataContext";
+import type { ProjectItem } from "~/utils/supabase";
 
 export function Projects() {
   const [filter, setFilter] = useState("all");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [viewMode, setViewMode] = useState<"stack" | "grid">("stack");
+  const [previewProject, setPreviewProject] = useState<ProjectItem | null>(null);
 
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { projects } = usePortfolioData();
 
   const categories = [
     { id: "all", name: t.projects.categories.all },
@@ -48,87 +50,12 @@ export function Projects() {
     { id: "editorial", name: t.projects.categories.editorial },
   ];
 
-  const projectMeta: ProjectItem[] = [
-    {
-      id: 1,
-      category: "branding",
-      image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=1200",
-      tags: ["Adobe Illustrator", "Photoshop", "Brand System", "Typography"],
-      clientLocation: "United States & France",
-      countryFlag: "🇺🇸 🇫🇷",
-      year: "2024",
-      accentColor: "#E0A96D", // Warm Gold
-      software: ["Adobe Illustrator", "Adobe Photoshop", "Dimension (3D)", "InDesign"],
-      deliverables: ["Full Brand Book", "Vector Logo Suite", "Stationery Kit", "3D Packaging"],
-    },
-    {
-      id: 2,
-      category: "packaging",
-      image: "https://images.unsplash.com/photo-1556742049-0a67c55c8cc0?auto=format&fit=crop&q=80&w=1200",
-      tags: ["Adobe Dimension", "Illustrator", "Packaging", "3D Render"],
-      clientLocation: "Germany",
-      countryFlag: "🇩🇪",
-      year: "2024",
-      accentColor: "#00F0FF", // Electric Cyan
-      software: ["Adobe Dimension (3D)", "Adobe Illustrator", "Photoshop", "Cinema 4D"],
-      deliverables: ["Die-Line Label Engineering", "Photorealistic 3D Renders", "Foil Finish Maps"],
-    },
-    {
-      id: 3,
-      category: "advertising",
-      image: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=1200",
-      tags: ["After Effects", "Photoshop", "Motion Graphics", "Billboards"],
-      clientLocation: "United States",
-      countryFlag: "🇺🇸",
-      year: "2023",
-      accentColor: "#8A60F1", // Cyber Purple
-      software: ["Adobe After Effects", "Adobe Photoshop", "Illustrator", "Premiere Pro"],
-      deliverables: ["Animated Billboard Promos", "Kinetic Posters", "Social Video Teasers"],
-    },
-    {
-      id: 4,
-      category: "editorial",
-      image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=1200",
-      tags: ["Adobe InDesign", "Photoshop", "Editorial Design", "Pre-Press"],
-      clientLocation: "Egypt & Germany",
-      countryFlag: "🇪🇬 🇩🇪",
-      year: "2023",
-      accentColor: "#F43F5E", // Crimson Rose
-      software: ["Adobe InDesign", "Adobe Photoshop", "Adobe Lightroom", "Illustrator"],
-      deliverables: ["180-Page Art Book Layout", "Embossed Hardcover", "Pre-Press Separation"],
-    },
-    {
-      id: 5,
-      category: "advertising",
-      image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200",
-      tags: ["Photoshop", "Illustrator", "Art Direction", "Social Media"],
-      clientLocation: "Germany",
-      countryFlag: "🇩🇪",
-      year: "2024",
-      accentColor: "#10B981", // Emerald Mint
-      software: ["Adobe Photoshop", "Adobe Illustrator", "Dimension", "After Effects"],
-      deliverables: ["Multi-Channel Ad Suite", "High-Res Key Visuals", "Instagram Story Ads"],
-    },
-    {
-      id: 6,
-      category: "packaging",
-      image: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&q=80&w=1200",
-      tags: ["Adobe Dimension", "Illustrator", "Packaging", "Luxury Branding"],
-      clientLocation: "France",
-      countryFlag: "🇫🇷",
-      year: "2024",
-      accentColor: "#EC4899", // Fuchsia Magenta
-      software: ["Adobe Dimension (3D)", "Adobe Illustrator", "Photoshop", "Lightroom"],
-      deliverables: ["Luxury Bottle Embossing", "Gold Foil Labels", "3D Glass Caustics Render"],
-    },
-  ];
-
   const filteredProjects =
     filter === "all"
-      ? projectMeta
-      : projectMeta.filter((project) => project.category === filter);
+      ? projects
+      : projects.filter((project) => project.category === filter);
 
-  // Reset current index if category changes and index is out of bounds
+  // Reset current index if category changes
   useEffect(() => {
     setCurrentIndex(0);
   }, [filter]);
@@ -235,7 +162,7 @@ export function Projects() {
         </div>
 
         {/* ------------------------------------------------------------------ */}
-        {/* VIEW 1: 3D Swipeable Stacked Card Deck (Mouse & Touch Enabled)     */}
+        {/* VIEW 1: 3D Swipeable Stacked Card Deck (Enhanced Tilt Physics)     */}
         {/* ------------------------------------------------------------------ */}
         {viewMode === "stack" ? (
           <div className="flex flex-col items-center justify-center space-y-10 py-6">
@@ -246,13 +173,13 @@ export function Projects() {
             </div>
 
             {/* 3D Stack Container Frame */}
-            <div className="relative w-full max-w-xl md:max-w-2xl h-[580px] md:h-[620px] flex items-center justify-center perspective-[1200px]">
+            <div className="relative w-full max-w-xl md:max-w-2xl h-[580px] md:h-[620px] flex items-center justify-center perspective-[1400px]">
               {filteredProjects.length === 0 ? (
                 <div className="text-center py-20 text-[var(--text-muted)]">
-                  No projects in this category.
+                  {t.projects.noProjects}
                 </div>
               ) : (
-                /* Render cards in reverse order (bottom to top) so the top card is last in DOM */
+                /* Render cards in reverse order so the top card is last in DOM */
                 Array.from({ length: Math.min(3, filteredProjects.length) })
                   .map((_, i) => {
                     const stackIndex = i;
@@ -260,33 +187,62 @@ export function Projects() {
                     const project = filteredProjects[projectIndex];
                     const offset = stackIndex;
                     const isTop = stackIndex === 0;
-                    const projectText =
-                      t.projects.items.find((item) => item.id === project.id) || t.projects.items[0];
+
+                    // Resolve bilingual fields
+                    const isDe = language === "de";
+                    const resolvedTitle = (isDe ? project.title_de : project.title) || project.title;
+                    const resolvedDesc =
+                      (isDe ? project.description_de : project.description) || project.description;
+                    const resolvedLocation =
+                      (isDe ? project.clientLocation_de : project.clientLocation) ||
+                      project.clientLocation;
+                    const resolvedDeliverables =
+                      (isDe && project.deliverables_de && project.deliverables_de.length > 0
+                        ? project.deliverables_de
+                        : project.deliverables) || [];
 
                     return {
                       project,
-                      text: projectText,
+                      resolvedTitle,
+                      resolvedDesc,
+                      resolvedLocation,
+                      resolvedDeliverables,
                       offset,
                       isTop,
                     };
                   })
                   .reverse()
-                  .map(({ project, text, offset, isTop }) => (
-                    <SwipeableCard
-                      key={`${project.id}-${offset}-${currentIndex}`}
-                      project={project}
-                      text={text}
-                      offset={offset}
-                      isTop={isTop}
-                      totalCards={filteredProjects.length}
-                      currentIndex={currentIndex}
-                      inquireBtnText={t.projects.inquireBtn}
-                      nextLabel={t.projects.nextBtn}
-                      prevLabel={t.projects.prevBtn}
-                      onSwipeLeft={handleNext}
-                      onSwipeRight={handlePrev}
-                    />
-                  ))
+                  .map(
+                    ({
+                      project,
+                      resolvedTitle,
+                      resolvedDesc,
+                      resolvedLocation,
+                      resolvedDeliverables,
+                      offset,
+                      isTop,
+                    }) => (
+                      <SwipeableCard
+                        key={`${project.id}-${offset}-${currentIndex}`}
+                        project={project}
+                        resolvedTitle={resolvedTitle}
+                        resolvedDesc={resolvedDesc}
+                        resolvedLocation={resolvedLocation}
+                        resolvedDeliverables={resolvedDeliverables}
+                        offset={offset}
+                        isTop={isTop}
+                        totalCards={filteredProjects.length}
+                        currentIndex={currentIndex}
+                        inquireBtnText={t.projects.inquireBtn}
+                        viewDetailsText={t.projects.viewDetails}
+                        nextLabel={t.projects.nextBtn}
+                        prevLabel={t.projects.prevBtn}
+                        onSwipeLeft={handleNext}
+                        onSwipeRight={handlePrev}
+                        onOpenPreview={() => setPreviewProject(project)}
+                      />
+                    )
+                  )
               )}
             </div>
 
@@ -301,7 +257,7 @@ export function Projects() {
                     ? "opacity-40 cursor-not-allowed text-[var(--text-muted)]"
                     : "text-[var(--text-secondary)] hover:text-[#8A60F1] hover:border-[#8A60F1]/50 hover:bg-[var(--pill-hover-bg)] hover:scale-110 active:scale-95 cursor-pointer"
                 }`}
-                title="Reset to first card"
+                title={t.projects.resetTitle}
               >
                 <RotateCcw className="w-5 h-5" />
               </button>
@@ -349,7 +305,7 @@ export function Projects() {
               <a
                 href="#contact"
                 className="w-12 h-12 rounded-full bg-gradient-to-r from-[#8A60F1] to-fuchsia-600 text-white flex items-center justify-center shadow-[0_0_20px_rgba(138,96,241,0.5)] hover:scale-110 active:scale-95 transition-all cursor-pointer"
-                title="Inquire about current project"
+                title={t.projects.inquireTooltip}
               >
                 <Flame className="w-5 h-5 text-amber-300" />
               </a>
@@ -373,7 +329,7 @@ export function Projects() {
           </div>
         ) : (
           /* ---------------------------------------------------------------- */
-          /* VIEW 2: Clean 3D Grid Overview                                   */
+          /* VIEW 2: Clean 3D Interactive Grid Overview                       */
           /* ---------------------------------------------------------------- */
           <motion.div
             layout
@@ -383,104 +339,242 @@ export function Projects() {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
           >
             {filteredProjects.map((project) => {
-              const projectText =
-                t.projects.items.find((item) => item.id === project.id) || t.projects.items[0];
+              const isDe = language === "de";
+              const resolvedTitle = (isDe ? project.title_de : project.title) || project.title;
+              const resolvedDesc =
+                (isDe ? project.description_de : project.description) || project.description;
+              const resolvedLocation =
+                (isDe ? project.clientLocation_de : project.clientLocation) ||
+                project.clientLocation;
+
               return (
-                <div
+                <GridProjectCard
                   key={project.id}
-                  className="glass-card rounded-3xl overflow-hidden flex flex-col justify-between group hover:border-[#8A60F1]/50 transition-all duration-500 hover:-translate-y-1.5 shadow-lg"
-                >
-                  <div className="relative aspect-[4/3] bg-slate-950 overflow-hidden">
-                    <img
-                      src={project.image}
-                      alt={projectText.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
-                    />
-                    <div className="absolute top-4 left-4">
-                      <span className="px-3 py-1 rounded-xl bg-black/60 backdrop-blur-md text-[#8A60F1] border border-[#8A60F1]/30 text-[10px] font-bold uppercase tracking-wider">
-                        {project.category}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-6 space-y-4">
-                    <h4 className="text-lg font-bold text-[var(--text-primary)] group-hover:text-[#8A60F1] transition-colors">
-                      {projectText.title}
-                    </h4>
-                    <p className="text-xs text-[var(--text-secondary)] font-light leading-relaxed line-clamp-2">
-                      {projectText.description}
-                    </p>
-                    <div className="pt-3 border-t border-[var(--card-border)] flex items-center justify-between">
-                      <span className="text-xs font-mono text-[var(--text-muted)]">
-                        {project.countryFlag} {project.clientLocation}
-                      </span>
-                      <a
-                        href="#contact"
-                        className="text-xs font-bold text-[#8A60F1] hover:text-fuchsia-400 flex items-center gap-1"
-                      >
-                        {t.projects.inquireBtn} <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                  </div>
-                </div>
+                  project={project}
+                  title={resolvedTitle}
+                  description={resolvedDesc}
+                  location={resolvedLocation}
+                  inquireBtnText={t.projects.inquireBtn}
+                  onOpenPreview={() => setPreviewProject(project)}
+                />
               );
             })}
           </motion.div>
         )}
       </div>
+
+      {/* PROJECT PREVIEW MODAL */}
+      <AnimatePresence>
+        {previewProject && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="glass-card rounded-3xl overflow-hidden max-w-3xl w-full shadow-2xl relative text-[var(--text-primary)] border-[#8A60F1]/40 max-h-[90vh] flex flex-col"
+            >
+              <button
+                onClick={() => setPreviewProject(null)}
+                className="absolute top-5 right-5 z-30 p-2 rounded-full bg-black/60 hover:bg-black/80 text-white transition-colors cursor-pointer border border-white/20"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="relative aspect-[16/9] w-full bg-slate-950">
+                <img
+                  src={previewProject.image}
+                  alt={previewProject.title}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6">
+                  <span className="px-3 py-1 rounded-xl bg-[#8A60F1]/30 border border-[#8A60F1]/50 text-[#8A60F1] text-xs font-bold uppercase tracking-wider">
+                    {previewProject.category}
+                  </span>
+                  <h3 className="text-2xl md:text-3xl font-extrabold text-white mt-2">
+                    {language === "de" && previewProject.title_de
+                      ? previewProject.title_de
+                      : previewProject.title}
+                  </h3>
+                </div>
+              </div>
+
+              <div className="p-6 md:p-8 space-y-6 overflow-y-auto">
+                <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-[var(--text-muted)] border-b border-[var(--card-border)] pb-4">
+                  <span className="flex items-center gap-1.5">
+                    <Compass className="w-4 h-4 text-[#8A60F1]" />
+                    {language === "de" && previewProject.clientLocation_de
+                      ? previewProject.clientLocation_de
+                      : previewProject.clientLocation}{" "}
+                    {previewProject.countryFlag}
+                  </span>
+                  <span>Year: {previewProject.year}</span>
+                </div>
+
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed font-light">
+                  {language === "de" && previewProject.description_de
+                    ? previewProject.description_de
+                    : previewProject.description}
+                </p>
+
+                {/* Deliverables */}
+                {previewProject.deliverables && previewProject.deliverables.length > 0 && (
+                  <div className="space-y-2">
+                    <h5 className="text-xs font-bold uppercase tracking-wider text-[#8A60F1]">
+                      {t.projects.deliverablesLabel}
+                    </h5>
+                    <div className="flex flex-wrap gap-2">
+                      {(language === "de" &&
+                      previewProject.deliverables_de &&
+                      previewProject.deliverables_de.length > 0
+                        ? previewProject.deliverables_de
+                        : previewProject.deliverables
+                      ).map((del, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1 rounded-xl bg-[#8A60F1]/15 text-[#8A60F1] border border-[#8A60F1]/30 text-xs font-medium flex items-center gap-1.5"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          {del}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Software Stack */}
+                {previewProject.software && previewProject.software.length > 0 && (
+                  <div className="space-y-2">
+                    <h5 className="text-xs font-bold uppercase tracking-wider text-cyan-400">
+                      {t.projects.toolsUsed}
+                    </h5>
+                    <div className="flex flex-wrap gap-2">
+                      {previewProject.software.map((sw, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1 rounded-xl bg-[var(--pill-bg)] text-[var(--text-primary)] border border-[var(--pill-border)] text-xs font-medium flex items-center gap-1.5"
+                        >
+                          <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                          {sw}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-4 flex items-center justify-end gap-4 border-t border-[var(--card-border)]">
+                  <a
+                    href="#contact"
+                    onClick={() => setPreviewProject(null)}
+                    className="px-6 py-3 rounded-full bg-gradient-to-r from-[#8A60F1] to-fuchsia-600 hover:from-[#7b51e0] hover:to-fuchsia-700 text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-[0_0_20px_rgba(138,96,241,0.4)] transition-all cursor-pointer"
+                  >
+                    <span>{t.projects.inquireBtn}</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
 
 // ----------------------------------------------------------------------------
-// Swipeable 3D Deck Card (Mouse Click & Drag, Touch Swipe Physics)
+// Swipeable 3D Deck Card (Interactive 3D Gyroscopic Tilt & Holographic Sheen)
 // ----------------------------------------------------------------------------
 function SwipeableCard({
   project,
-  text,
+  resolvedTitle,
+  resolvedDesc,
+  resolvedLocation,
+  resolvedDeliverables,
   offset,
   isTop,
   totalCards,
   currentIndex,
   inquireBtnText,
+  viewDetailsText,
   nextLabel,
   prevLabel,
   onSwipeLeft,
   onSwipeRight,
+  onOpenPreview,
 }: {
   project: ProjectItem;
-  text: { title: string; description: string };
+  resolvedTitle: string;
+  resolvedDesc: string;
+  resolvedLocation: string;
+  resolvedDeliverables: string[];
   offset: number;
   isTop: boolean;
   totalCards: number;
   currentIndex: number;
   inquireBtnText: string;
+  viewDetailsText: string;
   nextLabel: string;
   prevLabel: string;
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
+  onOpenPreview: () => void;
 }) {
+  const cardRef = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0);
   const [isSwipingOut, setIsSwipingOut] = useState(false);
 
-  // Synchronize and reset motion values whenever card role or index changes
+  // Mouse tilt tracking relative to card center
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [14, -14]), {
+    stiffness: 300,
+    damping: 30,
+  });
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-14, 14]), {
+    stiffness: 300,
+    damping: 30,
+  });
+
+  // Dynamic holographic shine position
+  const shineX = useTransform(mouseX, [-0.5, 0.5], ["0%", "100%"]);
+  const shineY = useTransform(mouseY, [-0.5, 0.5], ["0%", "100%"]);
+
+  // Reset motion values on card change
   useEffect(() => {
     x.set(0);
+    mouseX.set(0);
+    mouseY.set(0);
     setIsSwipingOut(false);
   }, [offset, isTop, project.id, currentIndex]);
 
-  // Dynamic physics mapped to mouse drag displacement
-  const rotate = useTransform(x, [-300, 0, 300], [-16, 0, 16]);
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isTop || !cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const nx = (e.clientX - rect.left) / rect.width - 0.5;
+    const ny = (e.clientY - rect.top) / rect.height - 0.5;
+    mouseX.set(nx);
+    mouseY.set(ny);
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  // Drag physics
+  const dragRotate = useTransform(x, [-300, 0, 300], [-16, 0, 16]);
   const opacity = useTransform(x, [-400, -200, 0, 200, 400], [0.3, 0.95, 1, 0.95, 0.3]);
   const dragScale = useTransform(x, [-300, 0, 300], [0.96, 1, 0.96]);
 
-  // Swipe indicator badges opacity (Fuchsia for Next, Cyan for Prev)
   const nextBadgeOpacity = useTransform(x, [-120, -25], [1, 0]);
   const nextBadgeScale = useTransform(x, [-120, -25], [1, 0.85]);
 
   const prevBadgeOpacity = useTransform(x, [25, 120], [0, 1]);
   const prevBadgeScale = useTransform(x, [25, 120], [0.85, 1]);
 
-  // 3D Stacking Layer Parameters for cards in the deck
+  // 3D Stacking parameters
   const stackScale = 1 - offset * 0.055;
   const translateY = offset * 22;
   const translateZ = -offset * 60;
@@ -488,24 +582,17 @@ function SwipeableCard({
   const rotateZ = offset === 0 ? 0 : offset === 1 ? -2 : 2.5;
   const baseOpacity = 1 - offset * 0.18;
 
-  // Handle Mouse / Touch Drag End
   const handleDragEnd = async (
     _e: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
   ) => {
     if (isSwipingOut) return;
 
-    // If there is only 1 card in this category, smoothly bounce back to center
     if (totalCards <= 1) {
-      animate(x, 0, {
-        type: "spring",
-        stiffness: 400,
-        damping: 25,
-      });
+      animate(x, 0, { type: "spring", stiffness: 400, damping: 25 });
       return;
     }
 
-    // Responsive swipe thresholds (low distance or fast flick)
     const distanceThreshold = 55;
     const velocityThreshold = 250;
 
@@ -513,40 +600,34 @@ function SwipeableCard({
     const isRightSwipe = info.offset.x > distanceThreshold || info.velocity.x > velocityThreshold;
 
     if (isLeftSwipe) {
-      // Swiping Left -> Throw card to the left and advance to Next card
       setIsSwipingOut(true);
-      await animate(x, -650, {
-        duration: 0.2,
-        ease: "easeOut",
-      });
+      await animate(x, -650, { duration: 0.2, ease: "easeOut" });
       x.set(0);
       setIsSwipingOut(false);
       onSwipeLeft();
     } else if (isRightSwipe) {
-      // Swiping Right -> Throw card to the right and go to Previous card
       setIsSwipingOut(true);
-      await animate(x, 650, {
-        duration: 0.2,
-        ease: "easeOut",
-      });
+      await animate(x, 650, { duration: 0.2, ease: "easeOut" });
       x.set(0);
       setIsSwipingOut(false);
       onSwipeRight();
     } else {
-      // Below threshold: spring back to center
-      animate(x, 0, {
-        type: "spring",
-        stiffness: 350,
-        damping: 25,
-      });
+      animate(x, 0, { type: "spring", stiffness: 350, damping: 25 });
     }
   };
 
+  const accent = project.accentColor || "#8A60F1";
+
   return (
     <motion.div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
       style={{
         x: isTop ? x : 0,
-        rotate: isTop ? rotate : rotateZ,
+        rotate: isTop ? dragRotate : rotateZ,
+        rotateX: isTop ? rotateX : 0,
+        rotateY: isTop ? rotateY : 0,
         opacity: isTop ? opacity : baseOpacity,
         scale: isTop ? dragScale : stackScale,
         y: translateY,
@@ -558,6 +639,7 @@ function SwipeableCard({
         right: 0,
         bottom: 0,
         touchAction: "pan-y",
+        transformStyle: "preserve-3d",
       }}
       drag={isTop ? "x" : false}
       dragConstraints={{ left: 0, right: 0 }}
@@ -575,16 +657,31 @@ function SwipeableCard({
         stiffness: 350,
         damping: 28,
       }}
-      className={`glass-card rounded-3xl overflow-hidden flex flex-col justify-between border border-[#8A60F1]/30 shadow-[0_20px_60px_rgba(138,96,241,0.22)] bg-[var(--card-bg)] select-none ${
+      className={`glass-card rounded-3xl overflow-hidden flex flex-col justify-between border border-[#8A60F1]/30 bg-[var(--card-bg)] select-none ${
         isTop
           ? "cursor-grab active:cursor-grabbing hover:border-[#8A60F1]/60"
           : "pointer-events-none"
       }`}
     >
-      {/* Visual Swipe Direction Indicator Badges */}
+      {/* Dynamic Colored Glow Dropshadow */}
+      <div
+        className="absolute -inset-2 rounded-3xl opacity-30 blur-2xl pointer-events-none -z-10 transition-opacity duration-300"
+        style={{ backgroundColor: accent }}
+      />
+
+      {/* Dynamic Holographic Specular Sheen on Cursor Hover */}
+      {isTop && (
+        <motion.div
+          className="absolute inset-0 pointer-events-none z-30 opacity-40 mix-blend-overlay transition-opacity"
+          style={{
+            background: `radial-gradient(circle 320px at ${shineX} ${shineY}, rgba(255, 255, 255, 0.45), transparent 70%)`,
+          }}
+        />
+      )}
+
+      {/* Swipe Badges */}
       {isTop && totalCards > 1 && (
         <>
-          {/* Next Badge on Left Swipe */}
           <motion.div
             style={{ opacity: nextBadgeOpacity, scale: nextBadgeScale }}
             className="absolute top-8 right-8 z-40 px-4 py-2 rounded-2xl border-2 border-fuchsia-400 bg-fuchsia-500/25 text-fuchsia-200 font-extrabold text-xs md:text-sm uppercase tracking-widest backdrop-blur-md shadow-[0_0_25px_rgba(217,70,239,0.5)] rotate-6 pointer-events-none flex items-center gap-2"
@@ -593,7 +690,6 @@ function SwipeableCard({
             <ArrowRight className="w-4 h-4" />
           </motion.div>
 
-          {/* Previous Badge on Right Swipe */}
           <motion.div
             style={{ opacity: prevBadgeOpacity, scale: prevBadgeScale }}
             className="absolute top-8 left-8 z-40 px-4 py-2 rounded-2xl border-2 border-cyan-400 bg-cyan-500/25 text-cyan-200 font-extrabold text-xs md:text-sm uppercase tracking-widest backdrop-blur-md shadow-[0_0_25px_rgba(6,182,212,0.5)] -rotate-6 pointer-events-none flex items-center gap-2"
@@ -608,12 +704,11 @@ function SwipeableCard({
       <div className="relative aspect-[16/10] bg-slate-950 overflow-hidden border-b border-[var(--card-border)] pointer-events-none">
         <img
           src={project.image}
-          alt={text.title}
+          alt={resolvedTitle}
           draggable={false}
           className="w-full h-full object-cover select-none pointer-events-none"
         />
 
-        {/* Ambient Overlay Vignette */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
 
         {/* Top Badges */}
@@ -629,7 +724,7 @@ function SwipeableCard({
         {/* Floating Accent Color Dot */}
         <div
           className="absolute bottom-4 right-4 w-3.5 h-3.5 rounded-full shadow-[0_0_12px_currentColor] pointer-events-none"
-          style={{ backgroundColor: project.accentColor }}
+          style={{ backgroundColor: accent }}
         />
       </div>
 
@@ -639,19 +734,21 @@ function SwipeableCard({
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-mono text-[var(--text-muted)] flex items-center gap-1.5">
               <Compass className="w-3.5 h-3.5 text-[#8A60F1]" />
-              {project.clientLocation}
+              {resolvedLocation}
             </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A60F1] px-2.5 py-0.5 rounded-md bg-[#8A60F1]/10 border border-[#8A60F1]/20">
-              {project.deliverables[0]}
-            </span>
+            {resolvedDeliverables[0] && (
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#8A60F1] px-2.5 py-0.5 rounded-md bg-[#8A60F1]/10 border border-[#8A60F1]/20">
+                {resolvedDeliverables[0]}
+              </span>
+            )}
           </div>
 
-          <h3 className="text-2xl md:text-3xl font-extrabold text-[var(--text-primary)] tracking-wide leading-tight">
-            {text.title}
+          <h3 className="text-2xl md:text-3xl font-extrabold text-[var(--text-primary)] tracking-wide leading-tight line-clamp-1">
+            {resolvedTitle}
           </h3>
 
           <p className="text-xs md:text-sm text-[var(--text-secondary)] leading-relaxed font-light line-clamp-3">
-            {text.description}
+            {resolvedDesc}
           </p>
         </div>
 
@@ -669,15 +766,144 @@ function SwipeableCard({
             ))}
           </div>
 
-          <a
-            href="#contact"
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#8A60F1] to-fuchsia-600 hover:from-[#7b51e0] hover:to-fuchsia-700 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(138,96,241,0.4)] hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer self-stretch sm:self-auto"
-          >
-            <span>{inquireBtnText}</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenPreview();
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="px-4 py-2.5 rounded-xl glass-card hover:border-[#8A60F1] text-xs font-bold text-[var(--text-primary)] hover:text-[#8A60F1] transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>{viewDetailsText}</span>
+            </button>
+
+            <a
+              href="#contact"
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#8A60F1] to-fuchsia-600 hover:from-[#7b51e0] hover:to-fuchsia-700 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(138,96,241,0.4)] hover:scale-[1.03] active:scale-[0.98] transition-all cursor-pointer"
+            >
+              <span>{inquireBtnText}</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Grid View Project Card with 3D Spotlight Tilt
+// ----------------------------------------------------------------------------
+function GridProjectCard({
+  project,
+  title,
+  description,
+  location,
+  inquireBtnText,
+  onOpenPreview,
+}: {
+  project: ProjectItem;
+  title: string;
+  description: string;
+  location: string;
+  inquireBtnText: string;
+  onOpenPreview: () => void;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const rotateX = useSpring(useTransform(mouseY, [-0.5, 0.5], [8, -8]), {
+    stiffness: 300,
+    damping: 30,
+  });
+  const rotateY = useSpring(useTransform(mouseX, [-0.5, 0.5], [-8, 8]), {
+    stiffness: 300,
+    damping: 30,
+  });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
+    mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  const accent = project.accentColor || "#8A60F1";
+
+  return (
+    <motion.div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        rotateX,
+        rotateY,
+        transformStyle: "preserve-3d",
+      }}
+      className="glass-card rounded-3xl overflow-hidden flex flex-col justify-between group hover:border-[#8A60F1]/60 transition-all duration-300 hover:-translate-y-1.5 shadow-lg relative"
+    >
+      {/* Artwork */}
+      <div
+        onClick={onOpenPreview}
+        className="relative aspect-[4/3] bg-slate-950 overflow-hidden cursor-pointer"
+      >
+        <img
+          src={project.image}
+          alt={title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30" />
+        <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+          <span className="px-3 py-1 rounded-xl bg-black/60 backdrop-blur-md text-[#8A60F1] border border-[#8A60F1]/30 text-[10px] font-bold uppercase tracking-wider">
+            {project.category}
+          </span>
+          <span className="px-2.5 py-1 rounded-xl bg-black/60 backdrop-blur-md text-white text-xs font-mono font-bold">
+            {project.countryFlag} {project.year}
+          </span>
+        </div>
+      </div>
+
+      <div className="p-6 space-y-4">
+        <h4
+          onClick={onOpenPreview}
+          className="text-lg font-bold text-[var(--text-primary)] group-hover:text-[#8A60F1] transition-colors cursor-pointer line-clamp-1"
+        >
+          {title}
+        </h4>
+        <p className="text-xs text-[var(--text-secondary)] font-light leading-relaxed line-clamp-2">
+          {description}
+        </p>
+
+        <div className="pt-3 border-t border-[var(--card-border)] flex items-center justify-between">
+          <span className="text-xs font-mono text-[var(--text-muted)] flex items-center gap-1">
+            <Compass className="w-3.5 h-3.5 text-[#8A60F1]" />
+            {location}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onOpenPreview}
+              className="p-1.5 rounded-lg glass-card hover:text-[#8A60F1] text-xs transition-colors cursor-pointer"
+              title="Quick Preview"
+            >
+              <Eye className="w-3.5 h-3.5" />
+            </button>
+            <a
+              href="#contact"
+              className="text-xs font-bold text-[#8A60F1] hover:text-fuchsia-400 flex items-center gap-1"
+            >
+              {inquireBtnText} <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
         </div>
       </div>
     </motion.div>

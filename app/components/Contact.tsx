@@ -67,7 +67,7 @@ export function Contact() {
               <div className="space-y-6">
                 {[
                   { icon: <Mail className="w-5 h-5 text-[#8A60F1]" />, title: t.contact.directEmail, value: contactEmail, href: `mailto:${contactEmail}` },
-                  { icon: <MapPin className="w-5 h-5 text-[#8A60F1]" />, title: t.contact.globalFootprint, value: "US • Germany • France • Egypt", href: null },
+                  { icon: <MapPin className="w-5 h-5 text-[#8A60F1]" />, title: t.contact.globalFootprint, value: t.contact.globalFootprintValue, href: null },
                   { icon: <MessageSquare className="w-5 h-5 text-[#8A60F1]" />, title: t.contact.languages, value: t.contact.langValue, href: null },
                 ].map((detail, idx) => (
                   <div key={idx} className="flex gap-4">

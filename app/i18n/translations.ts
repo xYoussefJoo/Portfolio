@@ -22,6 +22,7 @@ export interface TranslationSchema {
     statLanguages: string;
     ctaProjects: string;
     ctaContact: string;
+    socialTooltip: string;
   };
   about: {
     tag: string;
@@ -51,6 +52,11 @@ export interface TranslationSchema {
       brand: string;
       motion: string;
     };
+    badges: {
+      adobe: string;
+      brand: string;
+      motion: string;
+    };
     expertLevel: string;
     productionReady: string;
   };
@@ -67,6 +73,8 @@ export interface TranslationSchema {
       editorial: string;
     };
     inquireBtn: string;
+    viewDetails: string;
+    closeDetails: string;
     swipeHint: string;
     prevBtn: string;
     nextBtn: string;
@@ -76,6 +84,10 @@ export interface TranslationSchema {
     viewStack: string;
     toolsUsed: string;
     client: string;
+    deliverablesLabel: string;
+    noProjects: string;
+    resetTitle: string;
+    inquireTooltip: string;
     items: {
       id: number;
       title: string;
@@ -101,6 +113,37 @@ export interface TranslationSchema {
     titleLine1: string;
     titleGradient: string;
     description: string;
+    liveRealtime: string;
+    realtimeSync: string;
+    leaveFeedbackBtn: string;
+    storiesCount: string;
+    noReviews: string;
+    viewBanner: string;
+    viewDeck: string;
+    avgRating: string;
+    liveStream: string;
+    pauseHint: string;
+    modal: {
+      badge: string;
+      title: string;
+      description: string;
+      ratingLabel: string;
+      starsCount: string;
+      nameLabel: string;
+      namePlaceholder: string;
+      roleLabel: string;
+      rolePlaceholder: string;
+      companyLabel: string;
+      companyPlaceholder: string;
+      countryLabel: string;
+      countryPlaceholder: string;
+      messageLabel: string;
+      messagePlaceholder: string;
+      submitBtn: string;
+      submitting: string;
+      successTitle: string;
+      successDesc: string;
+    };
     items: {
       name: string;
       role: string;
@@ -117,6 +160,7 @@ export interface TranslationSchema {
     infoTitle: string;
     directEmail: string;
     globalFootprint: string;
+    globalFootprintValue: string;
     languages: string;
     langValue: string;
     quoteTitle: string;
@@ -148,6 +192,7 @@ export interface TranslationSchema {
     copyright: string;
     role: string;
     backToTop: string;
+    adminDashboard: string;
   };
 }
 
@@ -174,6 +219,7 @@ export const translations: Record<Language, TranslationSchema> = {
       statLanguages: "English & German Fluent",
       ctaProjects: "Explore Portfolio",
       ctaContact: "Let's Talk",
+      socialTooltip: "Follow on",
     },
     about: {
       tag: "01 // BACKGROUND & REACH",
@@ -208,6 +254,11 @@ export const translations: Record<Language, TranslationSchema> = {
         brand: "Brand Identity & Art Direction",
         motion: "Motion & Digital Art Direction",
       },
+      badges: {
+        adobe: "Core Mastery",
+        brand: "Specialization",
+        motion: "Visual Craft",
+      },
       expertLevel: "Expert Level",
       productionReady: "100% Production Ready",
     },
@@ -224,6 +275,8 @@ export const translations: Record<Language, TranslationSchema> = {
         editorial: "Editorial & Print",
       },
       inquireBtn: "Inquire Project",
+      viewDetails: "View Details",
+      closeDetails: "Close Preview",
       swipeHint: "Swipe / Drag left or right or use arrow buttons",
       prevBtn: "Previous",
       nextBtn: "Next",
@@ -233,6 +286,10 @@ export const translations: Record<Language, TranslationSchema> = {
       viewStack: "3D Stack",
       toolsUsed: "Adobe CC Stack",
       client: "Client Market",
+      deliverablesLabel: "Deliverables",
+      noProjects: "No projects in this category.",
+      resetTitle: "Reset to first card",
+      inquireTooltip: "Inquire about current project",
       items: [
         {
           id: 1,
@@ -303,6 +360,37 @@ export const translations: Record<Language, TranslationSchema> = {
       titleLine1: "Trusted by global",
       titleGradient: "studios & brands",
       description: "Endorsements from creative directors, marketing leaders, and founders across the United States, Germany, France, and Egypt.",
+      liveRealtime: "Live Supabase Realtime",
+      realtimeSync: "Realtime Sync Ready",
+      leaveFeedbackBtn: "Leave Feedback",
+      storiesCount: "Stories",
+      noReviews: "No reviews yet. Be the first to share your feedback!",
+      viewBanner: "Live Banner Ticker",
+      viewDeck: "3D Stack Deck",
+      avgRating: "5.0 Rating • 100% Satisfaction",
+      liveStream: "Live Client & Collaborator Stream",
+      pauseHint: "Hover card to pause ticker",
+      modal: {
+        badge: "Share Your Experience",
+        title: "Leave a Review",
+        description: "Your feedback will be moderated and featured on our live card deck once approved.",
+        ratingLabel: "Your Rating (1 to 5 Stars)",
+        starsCount: "Stars",
+        nameLabel: "Full Name *",
+        namePlaceholder: "e.g. Alexander Weber",
+        roleLabel: "Role / Title",
+        rolePlaceholder: "e.g. Marketing Lead",
+        companyLabel: "Company / Brand",
+        companyPlaceholder: "e.g. Acme Media",
+        countryLabel: "Country / City",
+        countryPlaceholder: "e.g. United States",
+        messageLabel: "Your Feedback / Review *",
+        messagePlaceholder: "Share your experience working on projects together...",
+        submitBtn: "Submit for Moderation",
+        submitting: "Submitting...",
+        successTitle: "Feedback Submitted!",
+        successDesc: "Thank you! Your feedback has been sent for admin review and will appear soon.",
+      },
       items: [
         {
           name: "Maximilian Schneider",
@@ -335,6 +423,7 @@ export const translations: Record<Language, TranslationSchema> = {
       infoTitle: "Design Inquiries",
       directEmail: "Direct Email",
       globalFootprint: "Global Footprint",
+      globalFootprintValue: "US • Germany • France • Egypt",
       languages: "Languages",
       langValue: "English & German (Deutsch) Fluent",
       quoteTitle: "Custom Project Quote?",
@@ -366,6 +455,7 @@ export const translations: Record<Language, TranslationSchema> = {
       copyright: "All rights reserved.",
       role: "Senior Graphic Designer & Visual Artist",
       backToTop: "Back to Top",
+      adminDashboard: "Admin Dashboard",
     },
   },
   de: {
@@ -390,6 +480,7 @@ export const translations: Record<Language, TranslationSchema> = {
       statLanguages: "Fließend Englisch & Deutsch",
       ctaProjects: "Portfolio Entdecken",
       ctaContact: "Kontakt Aufnehmen",
+      socialTooltip: "Folgen auf",
     },
     about: {
       tag: "01 // HINTERGRUND & REICHWEITE",
@@ -424,6 +515,11 @@ export const translations: Record<Language, TranslationSchema> = {
         brand: "Brand Identity & Art Direction",
         motion: "Motion Design & Digital Art",
       },
+      badges: {
+        adobe: "Kernkompetenz",
+        brand: "Spezialisierung",
+        motion: "Visuelle Gestaltung",
+      },
       expertLevel: "Expertenniveau",
       productionReady: "100% Produktionsreif",
     },
@@ -440,6 +536,8 @@ export const translations: Record<Language, TranslationSchema> = {
         editorial: "Editorial & Print",
       },
       inquireBtn: "Projekt anfragen",
+      viewDetails: "Details ansehen",
+      closeDetails: "Vorschau schließen",
       swipeHint: "Wische / Ziehe nach links oder rechts oder nutze die Pfeiltasten",
       prevBtn: "Vorheriges",
       nextBtn: "Nächstes",
@@ -449,6 +547,10 @@ export const translations: Record<Language, TranslationSchema> = {
       viewStack: "3D Stapel",
       toolsUsed: "Adobe CC Software-Stack",
       client: "Kundenmarkt",
+      deliverablesLabel: "Leistungsumfang",
+      noProjects: "Keine Projekte in dieser Kategorie.",
+      resetTitle: "Auf erste Karte zurücksetzen",
+      inquireTooltip: "Dieses Projekt anfragen",
       items: [
         {
           id: 1,
@@ -519,6 +621,37 @@ export const translations: Record<Language, TranslationSchema> = {
       titleLine1: "Geschätzt von globalen",
       titleGradient: "Studios & Marken",
       description: "Empfehlungen von Creative Directors, Marketing-Leitern und Gründern aus den USA, Deutschland, Frankreich und Ägypten.",
+      liveRealtime: "Live Supabase Realtime",
+      realtimeSync: "Echtzeit-Synchronisation",
+      leaveFeedbackBtn: "Feedback hinterlassen",
+      storiesCount: "Referenzen",
+      noReviews: "Noch keine Bewertungen vorhanden. Hinterlassen Sie die erste Referenz!",
+      viewBanner: "Live-Banner Ticker",
+      viewDeck: "3D Stapel-Deck",
+      avgRating: "5,0 Bewertung • 100% Zufriedenheit",
+      liveStream: "Live Kunden- & Partner-Stream",
+      pauseHint: "Mit der Maus anhalten",
+      modal: {
+        badge: "Erfahrungen teilen",
+        title: "Bewertung schreiben",
+        description: "Ihr Feedback wird überprüft und nach Freigabe auf der Startseite veröffentlicht.",
+        ratingLabel: "Ihre Bewertung (1 bis 5 Sterne)",
+        starsCount: "Sterne",
+        nameLabel: "Vollständiger Name *",
+        namePlaceholder: "z. B. Maximilian Müller",
+        roleLabel: "Position / Funktion",
+        rolePlaceholder: "z. B. Marketingleiter",
+        companyLabel: "Unternehmen / Marke",
+        companyPlaceholder: "z. B. Acme Media",
+        countryLabel: "Land / Stadt",
+        countryPlaceholder: "z. B. Deutschland",
+        messageLabel: "Ihre Bewertung / Feedback *",
+        messagePlaceholder: "Beschreiben Sie Ihre Erfahrungen bei der Zusammenarbeit...",
+        submitBtn: "Zur Überprüfung einreichen",
+        submitting: "Wird übermittelt...",
+        successTitle: "Feedback eingereicht!",
+        successDesc: "Vielen Dank! Ihre Bewertung wurde zur Überprüfung eingereicht und wird bald sichtbar sein.",
+      },
       items: [
         {
           name: "Maximilian Schneider",
@@ -551,6 +684,7 @@ export const translations: Record<Language, TranslationSchema> = {
       infoTitle: "Projektanfragen",
       directEmail: "Direkte E-Mail",
       globalFootprint: "Globale Präsenz",
+      globalFootprintValue: "USA • Deutschland • Frankreich • Ägypten",
       languages: "Sprachen",
       langValue: "Fließend Deutsch & Englisch",
       quoteTitle: "Individuelles Projektangebot?",
@@ -582,6 +716,7 @@ export const translations: Record<Language, TranslationSchema> = {
       copyright: "Alle Rechte vorbehalten.",
       role: "Senior Grafikdesigner & Visueller Künstler",
       backToTop: "Nach Oben",
+      adminDashboard: "Admin-Dashboard",
     },
   },
 };

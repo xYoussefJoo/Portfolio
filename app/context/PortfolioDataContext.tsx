@@ -1,24 +1,134 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import type { User } from "@supabase/supabase-js";
-import { supabase, type FeedbackItem, type SectionItem, type SocialLinkItem } from "~/utils/supabase";
+import {
+  supabase,
+  type FeedbackItem,
+  type SectionItem,
+  type SocialLinkItem,
+  type ProjectItem,
+} from "~/utils/supabase";
 
 // Default fallback data if Supabase tables are not yet created or empty
 const DEFAULT_SECTIONS: Record<string, string> = {
-  hero_badge: "Senior Graphic Designer & Visual Artist",
-  hero_title_line1: "Crafting Iconic",
-  hero_title_gradient: "Visual Identities & 3D Experiences",
-  hero_intro: "Over 3+ years turning complex brand visions into award-winning visual experiences across the US, Germany, France, and Egypt.",
-  hero_stat_projects: "200+ Delivered Projects",
-  hero_stat_adobe: "Adobe Master",
-  hero_stat_languages: "Multilingual EN / DE / FR / AR",
-  about_tag: "Visual Storyteller & Creator",
-  about_title_line1: "Transforming Ideas into",
-  about_title_gradient: "Unforgettable Aesthetics",
-  about_description: "With a deep mastery of graphic design, brand strategy, and visual arts, I help global brands stand out in saturated markets.",
-  about_philosophy_p1: "Design is not just what it looks like and feels like. Design is how it communicates, resonates, and moves people to action.",
-  about_philosophy_p2: "Specialized in high-impact brand identities, packaging, 3D visual art, and multilingual campaign executions across Europe, the Americas, and the Middle East.",
   profile_image_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80",
 };
+
+const DEFAULT_PROJECTS: ProjectItem[] = [
+  {
+    id: "1",
+    title: "Aura Botanica - Luxury Organic Cosmetics",
+    title_de: "Aura Botanica - Luxus-Naturkosmetik",
+    description: "Comprehensive visual identity, botanical packaging design, and 3D product renders in Adobe Dimension & Photoshop.",
+    description_de: "Ganzheitliche Markenidentität, botanisches Verpackungsdesign und fotorealistische 3D-Renderings in Adobe Dimension & Photoshop.",
+    category: "branding",
+    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=1200",
+    tags: ["Adobe Illustrator", "Photoshop", "Brand System", "Typography"],
+    clientLocation: "United States & France",
+    clientLocation_de: "USA & Frankreich",
+    countryFlag: "🇺🇸 🇫🇷",
+    year: "2024",
+    accentColor: "#E0A96D", // Warm Gold
+    software: ["Adobe Illustrator", "Adobe Photoshop", "Dimension (3D)", "InDesign"],
+    deliverables: ["Full Brand Book", "Vector Logo Suite", "Stationery Kit", "3D Packaging"],
+    deliverables_de: ["Vollständiges Brand Book", "Vektor-Logo Suite", "Geschäftsausstattung", "3D-Verpackung"],
+    order_index: 1,
+  },
+  {
+    id: "2",
+    title: "CyberPulse - Esports Energy Drink",
+    title_de: "CyberPulse - Esports Energy Drink",
+    description: "High-octane can packaging, dynamic vector illustrations in Adobe Illustrator, and 3D metallic foil finish mockup.",
+    description_de: "Dynamisches Dosendesign, Vektorillustrationen in Adobe Illustrator und 3D-Mockups mit metallischen Folieneffekten.",
+    category: "packaging",
+    image: "https://images.unsplash.com/photo-1556742049-0a67c55c8cc0?auto=format&fit=crop&q=80&w=1200",
+    tags: ["Adobe Dimension", "Illustrator", "Packaging", "3D Render"],
+    clientLocation: "Germany",
+    clientLocation_de: "Deutschland",
+    countryFlag: "🇩🇪",
+    year: "2024",
+    accentColor: "#00F0FF", // Electric Cyan
+    software: ["Adobe Dimension (3D)", "Adobe Illustrator", "Photoshop", "Cinema 4D"],
+    deliverables: ["Die-Line Label Engineering", "Photorealistic 3D Renders", "Foil Finish Maps"],
+    deliverables_de: ["Stanzkontur-Etikettendesign", "Fotorealistische 3D-Renderings", "Folieneffekt-Maps"],
+    order_index: 2,
+  },
+  {
+    id: "3",
+    title: "Vortex Sound - Spatial Audio Identity",
+    title_de: "Vortex Sound - Spatial Audio Brand",
+    description: "Complete visual branding, custom typographic logotype, and advertising poster series for European audiophile brand.",
+    description_de: "Komplettes visuelles Branding, individuelles typografisches Logo und Werbeplakat-Serie für europäische Audiomarke.",
+    category: "advertising",
+    image: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=1200",
+    tags: ["After Effects", "Photoshop", "Motion Graphics", "Billboards"],
+    clientLocation: "United States",
+    clientLocation_de: "USA",
+    countryFlag: "🇺🇸",
+    year: "2023",
+    accentColor: "#8A60F1", // Cyber Purple
+    software: ["Adobe After Effects", "Adobe Photoshop", "Illustrator", "Premiere Pro"],
+    deliverables: ["Animated Billboard Promos", "Kinetic Posters", "Social Video Teasers"],
+    deliverables_de: ["Animierte Billboard-Promos", "Kinetische Plakate", "Social-Video-Teaser"],
+    order_index: 3,
+  },
+  {
+    id: "4",
+    title: "NeoHaus - Architectural Studio Book",
+    title_de: "NeoHaus - Architektur-Buchband",
+    description: "Editorial layout, grid architecture, typography, and premium print-ready book in Adobe InDesign for Berlin studio.",
+    description_de: "Redaktionelles Layout, typografisches Rastersystem und hochwertiges, druckfertiges Buch in Adobe InDesign für Berliner Studio.",
+    category: "editorial",
+    image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=1200",
+    tags: ["Adobe InDesign", "Photoshop", "Editorial Design", "Pre-Press"],
+    clientLocation: "Egypt & Germany",
+    clientLocation_de: "Ägypten & Deutschland",
+    countryFlag: "🇪🇬 🇩🇪",
+    year: "2023",
+    accentColor: "#F43F5E", // Crimson Rose
+    software: ["Adobe InDesign", "Adobe Photoshop", "Adobe Lightroom", "Illustrator"],
+    deliverables: ["180-Page Art Book Layout", "Embossed Hardcover", "Pre-Press Separation"],
+    deliverables_de: ["180-Seiten Artbook-Layout", "Geprägtes Hardcover", "Druckvorstufen-Separation"],
+    order_index: 4,
+  },
+  {
+    id: "5",
+    title: "AeroGlide - Sustainable Footwear Campaign",
+    title_de: "AeroGlide - Nachhaltige Sneaker-Kampagne",
+    description: "High-impact social media campaign posters, typography lockups, and motion teaser storyboards for US launch.",
+    description_de: "Wirkungsstarke Plakate für Social-Media-Kampagnen, Typografie-Konzepte und Teaser-Storyboards für den US-Marktstart.",
+    category: "advertising",
+    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200",
+    tags: ["Photoshop", "Illustrator", "Art Direction", "Social Media"],
+    clientLocation: "Germany",
+    clientLocation_de: "Deutschland",
+    countryFlag: "🇩🇪",
+    year: "2024",
+    accentColor: "#10B981", // Emerald Mint
+    software: ["Adobe Photoshop", "Adobe Illustrator", "Dimension", "After Effects"],
+    deliverables: ["Multi-Channel Ad Suite", "High-Res Key Visuals", "Instagram Story Ads"],
+    deliverables_de: ["Multi-Channel-Werbesuite", "High-Res Key Visuals", "Instagram Story Ads"],
+    order_index: 5,
+  },
+  {
+    id: "6",
+    title: "Solara Spirits - Premium Gin Packaging",
+    title_de: "Solara Spirits - Premium Gin Verpackung",
+    description: "Intricate vintage-modern label illustration, custom gold foil embossed mockup, and typography for Parisian distillery.",
+    description_de: "Detaillierte Vintage-Etiketten-Illustration, Heißfolienprägung-Mockups und Typografie für Pariser Premium-Destillerie.",
+    category: "packaging",
+    image: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&q=80&w=1200",
+    tags: ["Adobe Dimension", "Illustrator", "Packaging", "Luxury Branding"],
+    clientLocation: "France",
+    clientLocation_de: "Frankreich",
+    countryFlag: "🇫🇷",
+    year: "2024",
+    accentColor: "#EC4899", // Fuchsia Magenta
+    software: ["Adobe Dimension (3D)", "Adobe Illustrator", "Photoshop", "Lightroom"],
+    deliverables: ["Luxury Bottle Embossing", "Gold Foil Labels", "3D Glass Caustics Render"],
+    deliverables_de: ["Luxusflaschen-Prägung", "Goldfolien-Etiketten", "3D-Glas-Caustics-Rendering"],
+    order_index: 6,
+  },
+];
 
 const DEFAULT_FEEDBACK: FeedbackItem[] = [
   {
@@ -86,6 +196,7 @@ interface PortfolioDataContextType {
   approvedFeedback: FeedbackItem[];
   pendingFeedback: FeedbackItem[];
   socialLinks: SocialLinkItem[];
+  projects: ProjectItem[];
   isLoading: boolean;
   isRealtimeConnected: boolean;
   dbError: string | null;
@@ -114,15 +225,23 @@ interface PortfolioDataContextType {
   updateSocialLink: (id: string, platform: string, url: string) => Promise<{ success: boolean; error?: string }>;
   addSocialLink: (platform: string, url: string) => Promise<{ success: boolean; error?: string }>;
   deleteSocialLink: (id: string) => Promise<{ success: boolean; error?: string }>;
+
+  // Projects CRUD
+  addProject: (project: Omit<ProjectItem, "id">) => Promise<{ success: boolean; error?: string }>;
+  updateProject: (id: string | number, project: Partial<ProjectItem>) => Promise<{ success: boolean; error?: string }>;
+  deleteProject: (id: string | number) => Promise<{ success: boolean; error?: string }>;
+  reorderProjects: (projects: ProjectItem[]) => Promise<{ success: boolean; error?: string }>;
+
   refreshData: () => Promise<void>;
 }
 
 const PortfolioDataContext = createContext<PortfolioDataContextType | undefined>(undefined);
 
 export function PortfolioDataProvider({ children }: { children: React.ReactNode }) {
-  const [sections, setSections] = useState<Record<string, string>>(DEFAULT_SECTIONS);
+  const [sections, setSections] = useState<Record<string, string>>({});
   const [feedback, setFeedback] = useState<FeedbackItem[]>(DEFAULT_FEEDBACK);
   const [socialLinks, setSocialLinks] = useState<SocialLinkItem[]>(DEFAULT_SOCIAL_LINKS);
+  const [projects, setProjects] = useState<ProjectItem[]>(DEFAULT_PROJECTS);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState<boolean>(false);
   const [dbError, setDbError] = useState<string | null>(null);
@@ -187,7 +306,7 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
       if (sectionsError) {
         hasAnyError = true;
       } else if (sectionsData && sectionsData.length > 0) {
-        const sectionsMap: Record<string, string> = { ...DEFAULT_SECTIONS };
+        const sectionsMap: Record<string, string> = {};
         sectionsData.forEach((row: SectionItem) => {
           if (row.key) sectionsMap[row.key] = row.value;
         });
@@ -216,6 +335,18 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         hasAnyError = true;
       } else if (socialData && socialData.length > 0) {
         setSocialLinks(socialData as SocialLinkItem[]);
+      }
+
+      // 4. Fetch projects
+      const { data: projectsData, error: projectsError } = await supabase
+        .from("projects")
+        .select("*")
+        .order("order_index", { ascending: true });
+
+      if (projectsError) {
+        // Table might not exist yet, fallback to default projects
+      } else if (projectsData && projectsData.length > 0) {
+        setProjects(projectsData as ProjectItem[]);
       }
 
       if (hasAnyError) {
@@ -285,6 +416,26 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
           }
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "projects" },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            setProjects((prev) => [
+              ...prev.filter((p) => String(p.id) !== String(payload.new.id)),
+              payload.new as ProjectItem,
+            ]);
+          } else if (payload.eventType === "UPDATE") {
+            setProjects((prev) =>
+              prev.map((p) =>
+                String(p.id) === String(payload.new.id) ? (payload.new as ProjectItem) : p
+              )
+            );
+          } else if (payload.eventType === "DELETE") {
+            setProjects((prev) => prev.filter((p) => String(p.id) !== String(payload.old.id)));
+          }
+        }
+      )
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
           setIsRealtimeConnected(true);
@@ -298,12 +449,16 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     };
   }, [fetchData]);
 
+  // Section retrieval with multi-language fallback support
   const getSection = useCallback(
     (key: string, fallback?: string) => {
       if (sections[key] !== undefined && sections[key] !== "") {
         return sections[key];
       }
-      return fallback !== undefined ? fallback : DEFAULT_SECTIONS[key] || "";
+      if (fallback !== undefined) {
+        return fallback;
+      }
+      return DEFAULT_SECTIONS[key] || "";
     },
     [sections]
   );
@@ -525,6 +680,88 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     }
   };
 
+  // Projects CRUD
+  const addProject = async (projectData: Omit<ProjectItem, "id">) => {
+    try {
+      const order_index = projects.length + 1;
+      const payload = {
+        ...projectData,
+        order_index: projectData.order_index ?? order_index,
+      };
+
+      const { data, error } = await supabase
+        .from("projects")
+        .insert([payload])
+        .select()
+        .single();
+
+      if (error || !data) {
+        const localProject: ProjectItem = {
+          id: `local-proj-${Date.now()}`,
+          ...payload,
+        };
+        setProjects((prev) => [...prev, localProject]);
+        return { success: true };
+      }
+
+      setProjects((prev) => [...prev, data as ProjectItem]);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || "Failed to add project" };
+    }
+  };
+
+  const updateProject = async (id: string | number, projectData: Partial<ProjectItem>) => {
+    try {
+      setProjects((prev) =>
+        prev.map((p) => (String(p.id) === String(id) ? { ...p, ...projectData } : p))
+      );
+
+      const { error } = await supabase
+        .from("projects")
+        .update(projectData)
+        .eq("id", id);
+
+      if (error) {
+        console.warn("Project update warning:", error.message);
+      }
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || "Failed to update project" };
+    }
+  };
+
+  const deleteProject = async (id: string | number) => {
+    try {
+      setProjects((prev) => prev.filter((p) => String(p.id) !== String(id)));
+      const { error } = await supabase.from("projects").delete().eq("id", id);
+      if (error) {
+        console.warn("Project delete warning:", error.message);
+      }
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || "Failed to delete project" };
+    }
+  };
+
+  const reorderProjects = async (newProjects: ProjectItem[]) => {
+    try {
+      setProjects(newProjects);
+
+      const updates = newProjects.map((p, idx) => ({
+        id: p.id,
+        order_index: idx + 1,
+      }));
+
+      for (const u of updates) {
+        await supabase.from("projects").update({ order_index: u.order_index }).eq("id", u.id);
+      }
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || "Failed to reorder projects" };
+    }
+  };
+
   const approvedFeedback = feedback.filter((f) => f.status === "approved");
   const pendingFeedback = feedback.filter((f) => f.status === "pending");
 
@@ -537,6 +774,7 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         approvedFeedback,
         pendingFeedback,
         socialLinks,
+        projects,
         isLoading,
         isRealtimeConnected,
         dbError,
@@ -553,6 +791,10 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         updateSocialLink,
         addSocialLink,
         deleteSocialLink,
+        addProject,
+        updateProject,
+        deleteProject,
+        reorderProjects,
         refreshData: fetchData,
       }}
     >

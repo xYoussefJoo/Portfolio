@@ -33,7 +33,7 @@ export function Footer() {
             title="Open Admin Dashboard"
           >
             <LayoutDashboard className="w-3 h-3" />
-            <span>Admin Dashboard</span>
+            <span>{t.footer.adminDashboard}</span>
           </a>
         </div>
 

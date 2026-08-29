@@ -13,12 +13,13 @@ import {
   Share2,
   LogOut,
   UserCheck,
+  FolderGit2,
 } from "lucide-react";
 import { usePortfolioData } from "~/context/PortfolioDataContext";
 
 interface DashboardHeaderProps {
-  activeTab: "feedback" | "content" | "social" | "sql";
-  setActiveTab: (tab: "feedback" | "content" | "social" | "sql") => void;
+  activeTab: "projects" | "feedback" | "content" | "social" | "sql";
+  setActiveTab: (tab: "projects" | "feedback" | "content" | "social" | "sql") => void;
   openSqlModal: () => void;
 }
 
@@ -29,6 +30,7 @@ export function DashboardHeader({ activeTab, setActiveTab, openSqlModal }: Dashb
     approvedFeedback,
     sections,
     socialLinks,
+    projects,
     isRealtimeConnected,
     isLoading,
     refreshData,
@@ -61,7 +63,7 @@ export function DashboardHeader({ activeTab, setActiveTab, openSqlModal }: Dashb
               )}
             </div>
             <p className="text-xs text-[var(--text-secondary)] font-light mt-0.5">
-              Manage live landing page content, moderate client feedback, and configure social channels.
+              Manage showcase projects, landing page content, client reviews, and social channels.
             </p>
           </div>
         </div>
@@ -130,7 +132,7 @@ export function DashboardHeader({ activeTab, setActiveTab, openSqlModal }: Dashb
           <div className="flex items-center gap-2">
             <Database className="w-4 h-4 text-amber-400 flex-shrink-0" />
             <span>
-              <strong>Supabase Setup Note:</strong> Default preview data is loaded. Run the SQL schema to enable persistent database storage.
+              <strong>Supabase Setup Note:</strong> Default preview data is loaded. Run the updated SQL schema to enable persistent database storage for projects, sections, feedback, and social links.
             </span>
           </div>
           <button
@@ -143,7 +145,28 @@ export function DashboardHeader({ activeTab, setActiveTab, openSqlModal }: Dashb
       )}
 
       {/* Metric Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        {/* Projects Card */}
+        <div
+          onClick={() => setActiveTab("projects")}
+          className="p-5 glass-card rounded-2xl hover:border-[#8A60F1]/50 cursor-pointer transition-all duration-300 group"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono uppercase tracking-wider text-[var(--text-muted)]">
+              Projects
+            </span>
+            <div className="w-7 h-7 rounded-lg bg-[#8A60F1]/20 text-[#8A60F1] flex items-center justify-center text-xs font-bold border border-[#8A60F1]/30">
+              {projects.length}
+            </div>
+          </div>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold text-[#8A60F1]">
+              {projects.length}
+            </span>
+            <span className="text-xs text-[var(--text-muted)]">showcase items</span>
+          </div>
+        </div>
+
         <div
           onClick={() => setActiveTab("feedback")}
           className="p-5 glass-card rounded-2xl hover:border-[#8A60F1]/50 cursor-pointer transition-all duration-300 group"
@@ -233,6 +256,21 @@ export function DashboardHeader({ activeTab, setActiveTab, openSqlModal }: Dashb
 
       {/* Main Tab Navigation Buttons */}
       <div className="flex flex-wrap items-center gap-2 p-1.5 glass-card rounded-2xl border-[var(--card-border)]">
+        <button
+          onClick={() => setActiveTab("projects")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+            activeTab === "projects"
+              ? "bg-[#8A60F1] text-white shadow-[0_0_20px_rgba(138,96,241,0.4)]"
+              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--pill-hover-bg)]"
+          }`}
+        >
+          <FolderGit2 className="w-4 h-4" />
+          <span>Projects Manager</span>
+          <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] bg-black/40 text-white font-mono">
+            {projects.length}
+          </span>
+        </button>
+
         <button
           onClick={() => setActiveTab("feedback")}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${

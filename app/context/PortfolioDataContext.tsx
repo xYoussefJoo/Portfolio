@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import type { User } from "@supabase/supabase-js";
 import { supabase, type FeedbackItem, type SectionItem, type SocialLinkItem } from "~/utils/supabase";
 
 // Default fallback data if Supabase tables are not yet created or empty
@@ -78,6 +79,7 @@ const DEFAULT_SOCIAL_LINKS: SocialLinkItem[] = [
 ];
 
 interface PortfolioDataContextType {
+  // Data
   sections: Record<string, string>;
   getSection: (key: string, fallback?: string) => string;
   feedback: FeedbackItem[];
@@ -87,6 +89,14 @@ interface PortfolioDataContextType {
   isLoading: boolean;
   isRealtimeConnected: boolean;
   dbError: string | null;
+
+  // Auth state & methods
+  user: User | null;
+  isAuthLoading: boolean;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signOut: () => Promise<void>;
+
+  // Data Mutations
   submitFeedback: (data: {
     name: string;
     message: string;
@@ -116,6 +126,52 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState<boolean>(false);
   const [dbError, setDbError] = useState<string | null>(null);
+
+  // Auth State
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
+
+  // Sync Auth session on mount and changes
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setIsAuthLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setIsAuthLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      setUser(data.user);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || "Failed to sign in" };
+    }
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
   // Fetch all initial data
   const fetchData = useCallback(async () => {
@@ -178,7 +234,6 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
   useEffect(() => {
     fetchData();
 
-    // Setup channel for realtime changes
     const channel = supabase
       .channel("portfolio-realtime-channel")
       .on(
@@ -186,7 +241,10 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         { event: "*", schema: "public", table: "feedback" },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            setFeedback((prev) => [payload.new as FeedbackItem, ...prev.filter((f) => f.id !== (payload.new as FeedbackItem).id)]);
+            setFeedback((prev) => [
+              payload.new as FeedbackItem,
+              ...prev.filter((f) => f.id !== (payload.new as FeedbackItem).id),
+            ]);
           } else if (payload.eventType === "UPDATE") {
             setFeedback((prev) =>
               prev.map((f) => (f.id === (payload.new as FeedbackItem).id ? (payload.new as FeedbackItem) : f))
@@ -214,7 +272,10 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         { event: "*", schema: "public", table: "social_links" },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            setSocialLinks((prev) => [...prev.filter((s) => s.id !== payload.new.id), payload.new as SocialLinkItem]);
+            setSocialLinks((prev) => [
+              ...prev.filter((s) => s.id !== payload.new.id),
+              payload.new as SocialLinkItem,
+            ]);
           } else if (payload.eventType === "UPDATE") {
             setSocialLinks((prev) =>
               prev.map((s) => (s.id === payload.new.id ? (payload.new as SocialLinkItem) : s))
@@ -237,7 +298,6 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     };
   }, [fetchData]);
 
-  // Safe helper to get section content with fallback
   const getSection = useCallback(
     (key: string, fallback?: string) => {
       if (sections[key] !== undefined && sections[key] !== "") {
@@ -248,7 +308,6 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     [sections]
   );
 
-  // Submit Feedback (Status defaults to 'pending')
   const submitFeedback = async (data: {
     name: string;
     message: string;
@@ -266,7 +325,9 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         role: data.role || "Client / Collaborator",
         company: data.company || "Project Partner",
         country: data.country || "Global",
-        avatar_url: data.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(data.name)}`,
+        avatar_url:
+          data.avatar_url ||
+          `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(data.name)}`,
         status: "pending" as const,
       };
 
@@ -277,7 +338,6 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         .single();
 
       if (error) {
-        // Optimistic local state fallback if database not configured
         const localItem: FeedbackItem = {
           id: `local-${Date.now()}`,
           ...newFeedback,
@@ -297,10 +357,8 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     }
   };
 
-  // Update Feedback Status (Approve / Pending)
   const updateFeedbackStatus = async (id: string, status: "pending" | "approved") => {
     try {
-      // Optimistic update
       setFeedback((prev) =>
         prev.map((f) => (f.id === id ? { ...f, status } : f))
       );
@@ -311,7 +369,7 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         .eq("id", id);
 
       if (error) {
-        console.warn("Feedback update in Supabase reported:", error.message);
+        console.warn("Feedback update reported:", error.message);
       }
       return { success: true };
     } catch (err: any) {
@@ -319,15 +377,13 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     }
   };
 
-  // Delete Feedback
   const deleteFeedback = async (id: string) => {
     try {
-      // Optimistic removal
       setFeedback((prev) => prev.filter((f) => f.id !== id));
 
       const { error } = await supabase.from("feedback").delete().eq("id", id);
       if (error) {
-        console.warn("Feedback delete in Supabase reported:", error.message);
+        console.warn("Feedback delete reported:", error.message);
       }
       return { success: true };
     } catch (err: any) {
@@ -335,7 +391,6 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     }
   };
 
-  // Update a single section
   const updateSection = async (key: string, value: string) => {
     try {
       setSections((prev) => ({ ...prev, [key]: value }));
@@ -353,7 +408,6 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     }
   };
 
-  // Bulk update sections
   const updateSectionsBulk = async (entries: { key: string; value: string }[]) => {
     try {
       const newMap = { ...sections };
@@ -381,7 +435,6 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     }
   };
 
-  // Upload image / asset to Supabase Storage bucket 'portfolio-assets'
   const uploadAsset = async (file: File, folder = "uploads") => {
     try {
       const fileExt = file.name.split(".").pop();
@@ -404,17 +457,15 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
 
       return { success: true, url: urlData.publicUrl };
     } catch (err: any) {
-      // Fallback: Create Object URL for preview/testing if bucket not yet created
       const fallbackUrl = URL.createObjectURL(file);
       return {
         success: true,
         url: fallbackUrl,
-        error: `Supabase Storage note: Using local preview (${err?.message || "create 'portfolio-assets' bucket in Supabase"})`,
+        error: `Storage note: Using preview URL (${err?.message || "Ensure 'portfolio-assets' bucket is public in Supabase"})`,
       };
     }
   };
 
-  // Social Links management
   const updateSocialLink = async (id: string, platform: string, url: string) => {
     try {
       setSocialLinks((prev) =>
@@ -489,6 +540,10 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         isLoading,
         isRealtimeConnected,
         dbError,
+        user,
+        isAuthLoading,
+        signIn,
+        signOut,
         submitFeedback,
         updateFeedbackStatus,
         deleteFeedback,

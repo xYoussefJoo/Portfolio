@@ -6,19 +6,22 @@ import { FeedbackModeration } from "~/components/dashboard/FeedbackModeration";
 import { ContentEditor } from "~/components/dashboard/ContentEditor";
 import { SocialLinksEditor } from "~/components/dashboard/SocialLinksEditor";
 import { SqlSetupGuide, SQL_SCHEMA_CONTENT } from "~/components/dashboard/SqlSetupGuide";
-import { X, Check, Copy } from "lucide-react";
+import { AdminLogin } from "~/components/dashboard/AdminLogin";
+import { usePortfolioData } from "~/context/PortfolioDataContext";
+import { X, Check, Copy, Lock, ShieldCheck } from "lucide-react";
 
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Portfolio Admin Dashboard | Kero Amir" },
     {
       name: "description",
-      content: "Open access management dashboard for live portfolio content, client feedback moderation, and social channels.",
+      content: "Protected management dashboard for live portfolio content, client feedback moderation, and social channels.",
     },
   ];
 }
 
 export default function Dashboard() {
+  const { user, isAuthLoading } = usePortfolioData();
   const [activeTab, setActiveTab] = useState<"feedback" | "content" | "social" | "sql">("feedback");
   const [isSqlModalOpen, setIsSqlModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -30,6 +33,24 @@ export default function Dashboard() {
     });
   };
 
+  // Auth Loading State
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-full border-2 border-t-[#8A60F1] border-white/10 animate-spin" />
+          <span className="text-xs font-mono text-[var(--text-muted)]">Checking Admin Session...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Not Logged In -> Show Admin Login Form
+  if (!user) {
+    return <AdminLogin />;
+  }
+
+  // Authenticated Admin Dashboard
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] selection:bg-[#8A60F1]/30 selection:text-[#8A60F1] antialiased transition-colors duration-350 py-8 px-4 sm:px-6 md:px-12 relative overflow-hidden bg-grid-cyber">
       {/* Background Decorative Glows */}

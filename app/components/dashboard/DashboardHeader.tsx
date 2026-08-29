@@ -11,6 +11,8 @@ import {
   MessageSquare,
   FileText,
   Share2,
+  LogOut,
+  UserCheck,
 } from "lucide-react";
 import { usePortfolioData } from "~/context/PortfolioDataContext";
 
@@ -31,6 +33,8 @@ export function DashboardHeader({ activeTab, setActiveTab, openSqlModal }: Dashb
     isLoading,
     refreshData,
     dbError,
+    user,
+    signOut,
   } = usePortfolioData();
 
   return (
@@ -42,13 +46,19 @@ export function DashboardHeader({ activeTab, setActiveTab, openSqlModal }: Dashb
             <LayoutDashboard className="w-6 h-6" />
           </div>
           <div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 flex-wrap">
               <h1 className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
                 Portfolio Admin
               </h1>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider bg-[#8A60F1]/15 text-[#8A60F1] border border-[#8A60F1]/30">
-                React + Supabase
+                Protected Session
               </span>
+              {user?.email && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <UserCheck className="w-3 h-3" />
+                  <span>{user.email}</span>
+                </span>
+              )}
             </div>
             <p className="text-xs text-[var(--text-secondary)] font-light mt-0.5">
               Manage live landing page content, moderate client feedback, and configure social channels.
@@ -96,11 +106,21 @@ export function DashboardHeader({ activeTab, setActiveTab, openSqlModal }: Dashb
           {/* View Live Site */}
           <a
             href="/"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-[#8A60F1] to-fuchsia-600 hover:from-[#7b51e0] hover:to-fuchsia-700 text-white text-xs font-semibold tracking-wider transition-all shadow-[0_0_20px_rgba(138,96,241,0.3)] hover:scale-105 active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl glass-card hover:border-[#8A60F1] text-xs font-semibold text-[var(--text-primary)] hover:text-[#8A60F1] transition-all cursor-pointer"
           >
-            <span>Live Portfolio</span>
-            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Live Site</span>
+            <ExternalLink className="w-3 h-3" />
           </a>
+
+          {/* Log Out Button */}
+          <button
+            onClick={signOut}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/30 text-xs font-bold transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95"
+            title="Sign Out of Admin Dashboard"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Log Out</span>
+          </button>
         </div>
       </div>
 

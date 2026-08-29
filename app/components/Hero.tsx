@@ -55,7 +55,6 @@ export function Hero() {
     const container = containerRef.current;
     const canvas = canvasRef.current;
 
-    // Use ResizeObserver to dynamically get parent bounds, preventing 0-width loading bugs on initial layouts
     const rect = container.getBoundingClientRect();
     let width = rect.width || 400;
     let height = rect.height || 450;
@@ -63,7 +62,7 @@ export function Hero() {
     const scene = new THREE.Scene();
     
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.z = 8;
+    camera.position.z = 7.5;
 
     const renderer = new THREE.WebGLRenderer({
       canvas: canvas,
@@ -73,38 +72,35 @@ export function Hero() {
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+    // Lights setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight(0x8A60F1, 2.5, 50);
-    pointLight.position.set(5, 5, 5);
-    scene.add(pointLight);
+    const purplePointLight = new THREE.PointLight(0x8A60F1, 4, 30);
+    purplePointLight.position.set(4, 4, 4);
+    scene.add(purplePointLight);
 
-    const blueLight = new THREE.PointLight(0x00f0ff, 2, 50);
-    blueLight.position.set(-5, -5, 5);
-    scene.add(blueLight);
+    const cyanPointLight = new THREE.PointLight(0x00f0ff, 3.5, 30);
+    cyanPointLight.position.set(-4, -4, 4);
+    scene.add(cyanPointLight);
 
-    // 3D Wireframe Mesh
-    const geometry = new THREE.TorusKnotGeometry(1.3, 0.4, 120, 16);
-    const material = new THREE.MeshStandardMaterial({
-      color: 0x8A60F1,
-      wireframe: true,
-      emissive: 0x1d0b3a,
-      roughness: 0.15,
-      metalness: 0.85,
-    });
-    const mesh = new THREE.Mesh(geometry, material);
-    scene.add(mesh);
+    const mouseSpotLight = new THREE.PointLight(0xffffff, 2, 25);
+    mouseSpotLight.position.set(0, 0, 5);
+    scene.add(mouseSpotLight);
 
-    // Dynamic Floating Particles
-    const particlesCount = 150;
+    // Root 3D Logo Group
+    const logo3DGroup = new THREE.Group();
+    scene.add(logo3DGroup);
+
+    // Dynamic Floating Background Particles
+    const particlesCount = 120;
     const particlesGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particlesCount * 3);
 
     for (let i = 0; i < particlesCount * 3; i += 3) {
-      positions[i] = (Math.random() - 0.5) * 10;
-      positions[i + 1] = (Math.random() - 0.5) * 10;
-      positions[i + 2] = (Math.random() - 0.5) * 6;
+      positions[i] = (Math.random() - 0.5) * 12;
+      positions[i + 1] = (Math.random() - 0.5) * 12;
+      positions[i + 2] = (Math.random() - 0.5) * 8;
     }
 
     particlesGeometry.setAttribute(
@@ -114,14 +110,163 @@ export function Hero() {
 
     const particlesMaterial = new THREE.PointsMaterial({
       color: 0x8A60F1,
-      size: 0.04,
+      size: 0.045,
       transparent: true,
-      opacity: 0.7,
+      opacity: 0.6,
       blending: THREE.AdditiveBlending,
     });
 
     const particles = new THREE.Points(particlesGeometry, particlesMaterial);
     scene.add(particles);
+
+    // Vector Orbit Rings (Representing Pen Tool & Vector Paths)
+    const ring1Geo = new THREE.TorusGeometry(2.3, 0.015, 16, 100);
+    const ring1Mat = new THREE.MeshStandardMaterial({
+      color: 0x8A60F1,
+      emissive: 0x8A60F1,
+      emissiveIntensity: 0.6,
+      roughness: 0.2,
+      metalness: 0.8,
+    });
+    const ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
+    ring1.rotation.x = Math.PI / 3;
+    ring1.rotation.y = Math.PI / 6;
+    logo3DGroup.add(ring1);
+
+    const ring2Geo = new THREE.TorusGeometry(2.6, 0.012, 16, 100);
+    const ring2Mat = new THREE.MeshStandardMaterial({
+      color: 0x00f0ff,
+      emissive: 0x00f0ff,
+      emissiveIntensity: 0.5,
+      roughness: 0.2,
+      metalness: 0.8,
+    });
+    const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+    ring2.rotation.x = -Math.PI / 4;
+    ring2.rotation.y = Math.PI / 3;
+    logo3DGroup.add(ring2);
+
+    // Vector Anchor Point Cubes (Graphic Designer Pen Tool Handles)
+    const handleGeo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+    const handleMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0x8A60F1,
+      emissiveIntensity: 0.8,
+    });
+
+    const anchorNodes: THREE.Mesh[] = [];
+    const numAnchors = 4;
+    for (let i = 0; i < numAnchors; i++) {
+      const anchor = new THREE.Mesh(handleGeo, handleMat);
+      logo3DGroup.add(anchor);
+      anchorNodes.push(anchor);
+    }
+
+    // Load and process Keso3DLogo to create clean transparent cutout texture and 3D extruded layers
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = "/img/Keso3DLogo.jpeg";
+
+    const planeGeo = new THREE.PlaneGeometry(3.4, 3.4);
+    const meshesToDispose: THREE.Material[] = [];
+    const geometriesToDispose: THREE.BufferGeometry[] = [ring1Geo, ring2Geo, handleGeo, planeGeo, particlesGeometry];
+
+    img.onload = () => {
+      // Offscreen canvas for chroma-keying black background to transparent
+      const offscreenCanvas = document.createElement("canvas");
+      const imgW = img.width;
+      const imgH = img.height;
+      offscreenCanvas.width = imgW;
+      offscreenCanvas.height = imgH;
+      const ctx = offscreenCanvas.getContext("2d");
+      if (!ctx) return;
+
+      ctx.drawImage(img, 0, 0);
+      const imgData = ctx.getImageData(0, 0, imgW, imgH);
+      const data = imgData.data;
+
+      // Clean chroma keying with perimeter boundary clearance to completely eliminate edge/border artifacts
+      const borderMargin = 8;
+
+      for (let y = 0; y < imgH; y++) {
+        for (let x = 0; x < imgW; x++) {
+          const idx = (y * imgW + x) * 4;
+
+          // Clear outer perimeter pixels to prevent texture edge clamp bleed
+          if (x < borderMargin || x >= imgW - borderMargin || y < borderMargin || y >= imgH - borderMargin) {
+            data[idx + 3] = 0;
+            continue;
+          }
+
+          const r = data[idx];
+          const g = data[idx + 1];
+          const b = data[idx + 2];
+          const maxVal = Math.max(r, g, b);
+
+          // Clean cutoff for dark background & compression artifacts
+          if (maxVal < 42) {
+            data[idx + 3] = 0;
+          } else if (maxVal < 80) {
+            const factor = (maxVal - 42) / 38;
+            data[idx + 3] = Math.floor(factor * factor * 255);
+          }
+        }
+      }
+
+      ctx.putImageData(imgData, 0, 0);
+
+      const transparentTexture = new THREE.CanvasTexture(offscreenCanvas);
+      transparentTexture.colorSpace = THREE.SRGBColorSpace;
+      transparentTexture.minFilter = THREE.LinearFilter;
+      transparentTexture.magFilter = THREE.LinearFilter;
+      transparentTexture.wrapS = THREE.ClampToEdgeWrapping;
+      transparentTexture.wrapT = THREE.ClampToEdgeWrapping;
+
+      // Create 3D Extruded Relief Layers along Z axis without edge clipping
+      const layerCount = 8;
+      const totalDepth = 0.24;
+
+      for (let i = 0; i < layerCount; i++) {
+        const z = -totalDepth / 2 + (i / (layerCount - 1)) * totalDepth;
+        const isFront = i === layerCount - 1;
+        const isBack = i === 0;
+        const isOuter = isFront || isBack;
+
+        const layerMat = new THREE.MeshStandardMaterial({
+          map: transparentTexture,
+          transparent: true,
+          alphaTest: 0.08,
+          opacity: isOuter ? 1.0 : 0.9,
+          roughness: isOuter ? 0.2 : 0.5,
+          metalness: isOuter ? 0.5 : 0.8,
+          emissive: isOuter ? 0x221133 : 0x442266,
+          emissiveIntensity: isOuter ? 0.35 : 0.6,
+          side: THREE.DoubleSide,
+          depthWrite: isOuter,
+        });
+
+        const layerMesh = new THREE.Mesh(planeGeo, layerMat);
+        layerMesh.position.z = z;
+        logo3DGroup.add(layerMesh);
+        meshesToDispose.push(layerMat);
+      }
+
+      // Backglow Halo Plane
+      const haloMat = new THREE.MeshBasicMaterial({
+        map: transparentTexture,
+        transparent: true,
+        alphaTest: 0.05,
+        opacity: 0.35,
+        blending: THREE.AdditiveBlending,
+        color: 0x8A60F1,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+      });
+      const haloMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 3.6), haloMat);
+      haloMesh.position.z = -0.04;
+      logo3DGroup.add(haloMesh);
+      meshesToDispose.push(haloMat);
+    };
 
     // Mouse Parallax coordinates
     let mouseX = 0;
@@ -137,7 +282,6 @@ export function Hero() {
 
     window.addEventListener("mousemove", handleMouseMove);
 
-    // ResizeObserver tracks container updates and resizes WebGL viewport smoothly
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const w = entry.contentRect.width || container.clientWidth || 400;
@@ -158,34 +302,70 @@ export function Hero() {
 
       const elapsedTime = clock.getElapsedTime();
 
-      // Rotations
-      mesh.rotation.x = elapsedTime * 0.12;
-      mesh.rotation.y = elapsedTime * 0.18;
-      particles.rotation.y = -elapsedTime * 0.03;
+      // Smooth Floating & Subtle 3D Tumbling Oscillations
+      const floatY = Math.sin(elapsedTime * 1.2) * 0.15;
+      const baseRotY = Math.sin(elapsedTime * 0.6) * 0.35;
+      const baseRotX = Math.cos(elapsedTime * 0.8) * 0.2;
 
-      // Mouse movements
-      targetX = targetX * 0.92 + mouseX * 0.08;
-      targetY = targetY * 0.92 + mouseY * 0.08;
+      // Rotate Orbit Rings
+      ring1.rotation.z = elapsedTime * 0.4;
+      ring2.rotation.z = -elapsedTime * 0.35;
 
-      mesh.position.x = targetX * 0.7;
-      mesh.position.y = targetY * 0.7;
+      // Position Anchor Nodes around the rings
+      anchorNodes.forEach((node, index) => {
+        const angle = elapsedTime * 0.4 + (index * Math.PI) / 2;
+        const radius = 2.3;
+        node.position.x = Math.cos(angle) * radius * Math.cos(Math.PI / 6);
+        node.position.y = Math.sin(angle) * radius * Math.sin(Math.PI / 3);
+        node.position.z = Math.sin(angle) * radius * Math.cos(Math.PI / 3);
+        node.rotation.x = elapsedTime;
+        node.rotation.y = elapsedTime;
+      });
 
-      camera.position.x = targetX * 0.25;
-      camera.position.y = targetY * 0.25;
+      // Background particle drift
+      particles.rotation.y = -elapsedTime * 0.02;
+
+      // Interactive Mouse Smoothing
+      targetX = targetX * 0.9 + mouseX * 0.1;
+      targetY = targetY * 0.9 + mouseY * 0.1;
+
+      // Apply 3D Transforms
+      logo3DGroup.position.y = floatY + targetY * 0.5;
+      logo3DGroup.position.x = targetX * 0.5;
+      logo3DGroup.rotation.y = baseRotY + targetX * 0.8;
+      logo3DGroup.rotation.x = baseRotX - targetY * 0.8;
+
+      // Dynamic light tracking mouse
+      mouseSpotLight.position.x = targetX * 6;
+      mouseSpotLight.position.y = targetY * 6;
+
       camera.lookAt(scene.position);
-
       renderer.render(scene, camera);
     };
 
     animate();
 
+    // Dynamic Theme Listener for 3D Studio lighting
+    const handleThemeChanged = (e: Event) => {
+      const customEvent = e as CustomEvent<"dark" | "light">;
+      const isLight = customEvent.detail === "light";
+      ambientLight.intensity = isLight ? 1.1 : 0.7;
+      particlesMaterial.color.setHex(isLight ? 0x7038e8 : 0x8A60F1);
+      particlesMaterial.opacity = isLight ? 0.85 : 0.6;
+    };
+
+    window.addEventListener("themeChanged", handleThemeChanged);
+
     return () => {
       cancelAnimationFrame(reqId);
       window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("themeChanged", handleThemeChanged);
       resizeObserver.disconnect();
-      geometry.dispose();
-      material.dispose();
-      particlesGeometry.dispose();
+      geometriesToDispose.forEach((g) => g.dispose());
+      meshesToDispose.forEach((m) => m.dispose());
+      ring1Mat.dispose();
+      ring2Mat.dispose();
+      handleMat.dispose();
       particlesMaterial.dispose();
       renderer.dispose();
     };
@@ -194,7 +374,7 @@ export function Hero() {
   return (
     <section
       id="home"
-      className="min-h-screen flex flex-col justify-center pt-28 pb-16 px-6 md:px-12 relative overflow-hidden bg-grid-curved"
+      className="min-h-screen flex flex-col justify-center pt-28 pb-16 px-6 md:px-12 relative overflow-hidden bg-grid-curved transition-colors duration-350"
     >
       {/* Background gradients */}
       <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-[#8A60F1]/10 blur-[130px] pointer-events-none animate-pulse-glow" />
@@ -204,15 +384,15 @@ export function Hero() {
       <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
         
         {/* Left Column - Biography details */}
-        <div className="lg:col-span-7 space-y-8 text-stone-100">
+        <div className="lg:col-span-7 space-y-8 text-[var(--text-primary)]">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#8A60F1]/10 border border-[#8A60F1]/20 text-xs font-semibold uppercase tracking-wider text-[#8A60F1] shadow-[0_0_15px_rgba(138,96,241,0.1)]"
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8A60F1]/10 border border-[#8A60F1]/20 text-xs font-semibold uppercase tracking-wider text-[#8A60F1] shadow-[0_0_15px_rgba(138,96,241,0.1)]"
           >
             <span className="w-2 h-2 rounded-full bg-[#8A60F1] animate-pulse" />
-            Full-Stack 3D Experiences
+            Senior Graphic Designer & Visual Artist
           </motion.div>
 
           <div className="space-y-4">
@@ -220,11 +400,11 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.15 }}
-              className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1]"
+              className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] text-[var(--text-primary)]"
             >
-              Building Immersive <br />
+              Crafting Iconic <br />
               <span className="bg-gradient-to-r from-[#8A60F1] via-fuchsia-400 to-[#00f0ff] bg-clip-text text-transparent text-glow-purple">
-                Web Ecosystems
+                Visual Identities
               </span>
             </motion.h1>
 
@@ -232,40 +412,52 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-lg md:text-xl text-stone-300 font-normal max-w-xl leading-relaxed"
+              className="text-lg md:text-xl text-[var(--text-secondary)] font-normal max-w-xl leading-relaxed"
             >
-              I am <span className="font-semibold text-white">Youssef Gamal</span>. I design and engineer interactive 3D web interfaces alongside robust, full-scale ASP.NET Core backend systems.
+              I am <span className="font-semibold text-[var(--text-primary)]">Kero Amir</span>. With <span className="text-[#8A60F1] font-semibold">3+ years of experience</span> and over <span className="text-[var(--text-primary)] font-semibold">+200 projects</span> delivered across the <span className="text-[var(--text-primary)] font-semibold">US, Germany, France, and Egypt</span>, I create extraordinary brand experiences powered by master-level Adobe Creative Cloud expertise.
             </motion.p>
           </div>
 
-          {/* Social Connect Icons */}
+          {/* Quick Stat Tags */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.45 }}
-            className="flex items-center gap-5 pt-6 border-t border-white/10"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="flex flex-wrap gap-2.5 pt-2"
           >
-            <span className="text-xs font-semibold uppercase tracking-wider text-stone-400">
-              Connect:
+            <span className="px-3.5 py-1.5 rounded-xl bg-[var(--pill-bg)] border border-[var(--pill-border)] text-xs text-[var(--text-secondary)] font-medium flex items-center gap-1.5 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              +200 Projects Delivered
             </span>
-            <div className="flex gap-4">
-              {[
-                { icon: githubIcon, href: "https://github.com", label: "GitHub" },
-                { icon: linkedinIcon, href: "https://linkedin.com", label: "LinkedIn" },
-                { icon: <Mail className="w-5 h-5" />, href: "mailto:xyousefjoo@gmail.com", label: "Email" },
-              ].map((social, idx) => (
-                <a
-                  key={idx}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2.5 rounded-full bg-white/5 hover:bg-[#8A60F1] border border-[#8A60F1]/10 hover:border-[#8A60F1]/40 text-stone-300 hover:text-white transition-all duration-300 hover:-translate-y-1 shadow-sm hover:shadow-[0_0_15px_rgba(138,96,241,0.3)]"
-                  aria-label={social.label}
-                >
-                  {social.icon}
-                </a>
-              ))}
-            </div>
+            <span className="px-3.5 py-1.5 rounded-xl bg-[var(--pill-bg)] border border-[var(--pill-border)] text-xs text-[var(--text-secondary)] font-medium flex items-center gap-1.5 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#8A60F1]"></span>
+              Adobe CC Suite Specialist
+            </span>
+            <span className="px-3.5 py-1.5 rounded-xl bg-[var(--pill-bg)] border border-[var(--pill-border)] text-xs text-[var(--text-secondary)] font-medium flex items-center gap-1.5 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
+              English & German Fluent
+            </span>
+          </motion.div>
+
+          {/* Action CTAs */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="flex flex-wrap items-center gap-4 pt-2"
+          >
+            <a
+              href="#projects"
+              className="px-6 py-3 rounded-full bg-gradient-to-r from-[#8A60F1] to-fuchsia-600 hover:from-[#7b51e0] hover:to-fuchsia-700 text-white font-semibold text-sm transition-all duration-300 hover:shadow-[0_0_25px_rgba(138,96,241,0.5)] hover:scale-[1.03] active:scale-[0.98]"
+            >
+              Explore Portfolio
+            </a>
+            <a
+              href="#contact"
+              className="px-6 py-3 rounded-full bg-[var(--pill-bg)] hover:bg-[var(--pill-hover-bg)] border border-[var(--pill-border)] hover:border-[#8A60F1]/50 text-[var(--text-primary)] font-semibold text-sm transition-all duration-300 hover:scale-[1.03]"
+            >
+              Let's Talk
+            </a>
           </motion.div>
         </div>
 

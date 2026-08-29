@@ -11,17 +11,17 @@ import { Footer } from "~/components/Footer";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Youssef Gamal | Full-Stack .NET & 3D Web Developer" },
+    { title: "Kero Amir | Senior Graphic Designer & Visual Artist" },
     {
       name: "description",
-      content: "Futuristic personal portfolio of Youssef Gamal, engineering interactive 3D web interfaces and enterprise-grade ASP.NET Core backend services.",
+      content: "Portfolio of Kero Amir — Senior Graphic Designer & Visual Artist with 3+ years of experience, 200+ completed projects across the US, Germany, France, and Egypt, and master-level expertise in Adobe Creative Cloud.",
     },
   ];
 }
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#050816] text-white selection:bg-[#8A60F1]/30 selection:text-white antialiased">
+    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] selection:bg-[#8A60F1]/30 selection:text-[#8A60F1] antialiased transition-colors duration-350">
       {/* Interactive Sticky Navbar */}
       <Navbar />
 

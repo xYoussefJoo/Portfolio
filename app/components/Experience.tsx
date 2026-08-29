@@ -1,33 +1,36 @@
-import { Briefcase, GraduationCap, Calendar } from "lucide-react";
+import { Globe, Award, Calendar, Compass, Sparkles } from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
 
 export function Experience() {
   const experiences = [
     {
-      type: "work",
-      role: "Full-Stack Developer",
-      company: "Freelancer (Upwork Portfolio)",
-      period: "2024 - Present",
-      description: "Building responsive web applications and robust backend solutions for global clients. Specializing in ASP.NET Core Web APIs, SQL Server database optimizations, CQRS patterns, and clean React/Next.js interfaces. Successfully delivered 15+ projects with 5-star feedback.",
+      period: "Year 3 — Present",
+      role: "Senior Graphic Designer & Brand Consultant",
+      company: "Global Remote Clients (US, Germany, France, Egypt)",
+      location: "United States • Germany • France • Egypt",
+      badge: "+200 Milestone",
+      description: "Surpassed +200 completed projects worldwide. Directing high-end visual brand architectures, luxury 3D product packaging mockups in Adobe Dimension, and dynamic motion graphics with After Effects for international agencies, technology startups, and consumer brands.",
     },
     {
-      type: "work",
-      role: "Backend & Systems Integration Specialist",
-      company: "Contract / Remote Projects",
-      period: "2023 - 2024",
-      description: "Co-authored clean architecture backend systems. Migrated database structures, optimized LINQ queries, and integrated third-party API gateways (Stripe, secure email delivery systems, Auth0) for small to mid-sized teams.",
+      period: "Year 2",
+      role: "European & Transatlantic Brand Designer",
+      company: "Contract Design & Boutique Brands",
+      location: "Germany • France • United States",
+      badge: "European Expansion",
+      description: "Expanded design operations into European markets including Germany and France while scaling transatlantic projects in the US. Spearheaded minimalist editorial layouts, luxury packaging for French perfumeries, and German technical brand guidelines, utilizing fluent German and English client communications.",
     },
     {
-      type: "education",
-      role: "B.Sc. in Computer Science & Technology",
-      company: "Assiut International Technological University - AITU",
-      period: "2024 - 2028 (Expected)",
-      description: "Acquiring core knowledge in Software Engineering, Relational Database Management Systems (RDBMS), Operating Systems, and Advanced Algorithms. Bridging standard theoretical computer science with practical freelancer client projects.",
+      period: "Year 1 — Foundation",
+      role: "Graphic Designer & Visual Identity Specialist",
+      company: "Agency & Freelance Collaborations",
+      location: "United States • Egypt",
+      badge: "Inception & Growth",
+      description: "Launched professional career delivering high-impact brand identities, vector logo design systems, and digital advertising campaigns for clients across Egypt and the United States. Completed 60+ projects with exceptional 5-star ratings.",
     },
   ];
 
   return (
-    <section id="experience" className="py-32 px-6 md:px-12 relative overflow-hidden bg-grid-curved">
+    <section id="experience" className="py-32 px-6 md:px-12 relative overflow-hidden bg-grid-curved transition-colors duration-350">
       {/* Glow blobs */}
       <div className="absolute bottom-1/4 left-1/4 w-[400px] h-[400px] bg-[#8A60F1]/5 blur-[120px] pointer-events-none" />
 
@@ -35,19 +38,19 @@ export function Experience() {
         {/* Section Header */}
         <ScrollReveal variant="fade-in-up" className="space-y-4 max-w-xl">
           <span className="text-xs font-mono font-bold tracking-widest text-[#8A60F1] uppercase bg-[#8A60F1]/10 px-3 py-1.5 rounded-md border border-[#8A60F1]/20 inline-block shadow-[0_0_15px_rgba(138,96,241,0.1)]">
-            04 // JOURNEY
+            04 // GLOBAL JOURNEY
           </span>
-          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
-            Journey & <br />
-            <span className="bg-gradient-to-r from-[#8A60F1] to-fuchsia-400 bg-clip-text text-transparent">experience</span>
+          <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
+            3 Years & <br />
+            <span className="bg-gradient-to-r from-[#8A60F1] to-fuchsia-500 bg-clip-text text-transparent">international reach</span>
           </h2>
-          <p className="text-stone-300 font-light leading-relaxed">
-            A history of client deliveries, professional integration services, and academic learning.
+          <p className="text-[var(--text-secondary)] font-light leading-relaxed">
+            From the United States & Egypt to Germany & France — a track record of +200 successful design deliveries across the globe.
           </p>
         </ScrollReveal>
 
         {/* Timeline Path */}
-        <div className="relative border-l border-[#8A60F1]/20 ml-4 md:ml-8 space-y-12 max-w-4xl">
+        <div className="relative border-l border-[#8A60F1]/25 ml-4 md:ml-8 space-y-12 max-w-4xl">
           {experiences.map((exp, idx) => (
             <ScrollReveal
               key={idx}
@@ -56,29 +59,40 @@ export function Experience() {
               className="relative pl-8 md:pl-12 group"
             >
               {/* Timeline dot */}
-              <div className="absolute -left-4.5 top-1.5 w-9 h-9 rounded-full bg-[#050816] text-white flex items-center justify-center border border-[#8A60F1]/30 group-hover:border-[#8A60F1] group-hover:shadow-[0_0_15px_rgba(138,96,241,0.5)] group-hover:scale-105 transition-all duration-300 shadow-md">
-                {exp.type === "work" ? (
-                  <Briefcase className="w-4 h-4 text-[#8A60F1]" />
+              <div className="absolute -left-4.5 top-1.5 w-9 h-9 rounded-full bg-[var(--bg-primary)] text-[var(--text-primary)] flex items-center justify-center border border-[#8A60F1]/40 group-hover:border-[#8A60F1] group-hover:shadow-[0_0_15px_rgba(138,96,241,0.5)] group-hover:scale-105 transition-all duration-300 shadow-md">
+                {idx === 0 ? (
+                  <Sparkles className="w-4 h-4 text-[#8A60F1]" />
                 ) : (
-                  <GraduationCap className="w-4 h-4 text-[#8A60F1]" />
+                  <Globe className="w-4 h-4 text-[#8A60F1]" />
                 )}
               </div>
 
               {/* Card Container */}
-              <div className="glass-card rounded-3xl p-6 md:p-8 hover:border-[#8A60F1]/40 hover:shadow-[0_0_25px_rgba(138,96,241,0.05)] transition-all duration-500 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="glass-card rounded-3xl p-6 md:p-8 hover:border-[#8A60F1]/40 transition-all duration-500 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h4 className="text-xl font-bold text-white tracking-wide">{exp.role}</h4>
-                    <span className="text-[#8A60F1] font-semibold text-sm">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xl font-bold text-[var(--text-primary)] tracking-wide">{exp.role}</h4>
+                      <span className="text-[10px] px-2.5 py-0.5 rounded-md bg-[#8A60F1]/10 text-[#8A60F1] font-bold border border-[#8A60F1]/20 uppercase">
+                        {exp.badge}
+                      </span>
+                    </div>
+                    <span className="text-[#8A60F1] font-semibold text-sm block mt-1">
                       {exp.company}
                     </span>
                   </div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8A60F1]/10 text-[#8A60F1] text-xs font-semibold self-start sm:self-auto border border-[#8A60F1]/20 shadow-[0_0_10px_rgba(138,96,241,0.05)]">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#8A60F1]/10 text-[#8A60F1] text-xs font-semibold self-start sm:self-auto border border-[#8A60F1]/20">
                     <Calendar className="w-3.5 h-3.5" />
                     {exp.period}
                   </div>
                 </div>
-                <p className="text-stone-300 text-sm md:text-base leading-relaxed font-light">
+
+                <div className="text-xs text-[var(--text-muted)] flex items-center gap-1.5 font-medium">
+                  <Compass className="w-3.5 h-3.5 text-[#8A60F1]" />
+                  <span>{exp.location}</span>
+                </div>
+
+                <p className="text-[var(--text-secondary)] text-sm md:text-base leading-relaxed font-light">
                   {exp.description}
                 </p>
               </div>

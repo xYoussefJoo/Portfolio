@@ -67,6 +67,15 @@ export interface TranslationSchema {
       editorial: string;
     };
     inquireBtn: string;
+    swipeHint: string;
+    prevBtn: string;
+    nextBtn: string;
+    cardCount: string;
+    of: string;
+    viewGrid: string;
+    viewStack: string;
+    toolsUsed: string;
+    client: string;
     items: {
       id: number;
       title: string;
@@ -215,6 +224,15 @@ export const translations: Record<Language, TranslationSchema> = {
         editorial: "Editorial & Print",
       },
       inquireBtn: "Inquire Project",
+      swipeHint: "Swipe / Drag left or right or use arrow buttons",
+      prevBtn: "Previous",
+      nextBtn: "Next",
+      cardCount: "Project",
+      of: "of",
+      viewGrid: "Grid View",
+      viewStack: "3D Stack",
+      toolsUsed: "Adobe CC Stack",
+      client: "Client Market",
       items: [
         {
           id: 1,
@@ -422,6 +440,15 @@ export const translations: Record<Language, TranslationSchema> = {
         editorial: "Editorial & Print",
       },
       inquireBtn: "Projekt anfragen",
+      swipeHint: "Wische / Ziehe nach links oder rechts oder nutze die Pfeiltasten",
+      prevBtn: "Vorheriges",
+      nextBtn: "Nächstes",
+      cardCount: "Projekt",
+      of: "von",
+      viewGrid: "Raster",
+      viewStack: "3D Stapel",
+      toolsUsed: "Adobe CC Software-Stack",
+      client: "Kundenmarkt",
       items: [
         {
           id: 1,

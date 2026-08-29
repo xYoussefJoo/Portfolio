@@ -8,7 +8,68 @@ import {
   type ProjectItem,
 } from "~/utils/supabase";
 
-// Default fallback data if Supabase tables are not yet created or empty
+// ----------------------------------------------------------------------------
+// LocalStorage Keys and Persistence Helpers
+// ----------------------------------------------------------------------------
+const LS_KEYS = {
+  PROJECTS: "portfolio_projects_data",
+  FEEDBACK: "portfolio_feedback_data",
+  SOCIAL_LINKS: "portfolio_social_links_data",
+  SECTIONS: "portfolio_sections_data",
+  DELETED_IDS: "portfolio_deleted_ids_set",
+};
+
+const isUUID = (str: string | number) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(str));
+
+function getDeletedIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(LS_KEYS.DELETED_IDS);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function markIdAsDeleted(id: string | number) {
+  if (typeof window === "undefined") return;
+  try {
+    const set = getDeletedIds();
+    set.add(String(id));
+    localStorage.setItem(LS_KEYS.DELETED_IDS, JSON.stringify(Array.from(set)));
+  } catch (e) {
+    console.warn("Failed to mark ID as deleted in localStorage:", e);
+  }
+}
+
+function loadLocalData<T>(key: string, fallback: T[]): T[] {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {
+    console.warn("Failed to read localStorage for", key, e);
+  }
+  const deletedSet = getDeletedIds();
+  return fallback.filter((item: any) => !deletedSet.has(String(item.id)));
+}
+
+function saveLocalData<T>(key: string, data: T) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (e) {
+    console.warn("Failed to save to localStorage for", key, e);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Default initial seed data (filtered by deleted IDs)
+// ----------------------------------------------------------------------------
 const DEFAULT_SECTIONS: Record<string, string> = {
   profile_image_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80",
 };
@@ -238,10 +299,18 @@ interface PortfolioDataContextType {
 const PortfolioDataContext = createContext<PortfolioDataContextType | undefined>(undefined);
 
 export function PortfolioDataProvider({ children }: { children: React.ReactNode }) {
+  // Initialize state with persistent localStorage cache
   const [sections, setSections] = useState<Record<string, string>>({});
-  const [feedback, setFeedback] = useState<FeedbackItem[]>(DEFAULT_FEEDBACK);
-  const [socialLinks, setSocialLinks] = useState<SocialLinkItem[]>(DEFAULT_SOCIAL_LINKS);
-  const [projects, setProjects] = useState<ProjectItem[]>(DEFAULT_PROJECTS);
+  const [feedback, setFeedback] = useState<FeedbackItem[]>(() =>
+    loadLocalData(LS_KEYS.FEEDBACK, DEFAULT_FEEDBACK)
+  );
+  const [socialLinks, setSocialLinks] = useState<SocialLinkItem[]>(() =>
+    loadLocalData(LS_KEYS.SOCIAL_LINKS, DEFAULT_SOCIAL_LINKS)
+  );
+  const [projects, setProjects] = useState<ProjectItem[]>(() =>
+    loadLocalData(LS_KEYS.PROJECTS, DEFAULT_PROJECTS)
+  );
+
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState<boolean>(false);
   const [dbError, setDbError] = useState<string | null>(null);
@@ -250,7 +319,7 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
   const [user, setUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
 
-  // Sync Auth session on mount and changes
+  // Sync Auth session
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -296,6 +365,7 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     let hasAnyError = false;
+    const deletedSet = getDeletedIds();
 
     try {
       // 1. Fetch sections
@@ -305,12 +375,13 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
 
       if (sectionsError) {
         hasAnyError = true;
-      } else if (sectionsData && sectionsData.length > 0) {
+      } else if (sectionsData) {
         const sectionsMap: Record<string, string> = {};
         sectionsData.forEach((row: SectionItem) => {
           if (row.key) sectionsMap[row.key] = row.value;
         });
         setSections(sectionsMap);
+        saveLocalData(LS_KEYS.SECTIONS, sectionsMap);
       }
 
       // 2. Fetch feedback
@@ -321,8 +392,13 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
 
       if (feedbackError) {
         hasAnyError = true;
-      } else if (feedbackData && feedbackData.length > 0) {
-        setFeedback(feedbackData as FeedbackItem[]);
+        setFeedback(loadLocalData(LS_KEYS.FEEDBACK, DEFAULT_FEEDBACK));
+      } else if (feedbackData !== null) {
+        const validFeedback = feedbackData.filter(
+          (f: FeedbackItem) => !deletedSet.has(String(f.id))
+        );
+        setFeedback(validFeedback as FeedbackItem[]);
+        saveLocalData(LS_KEYS.FEEDBACK, validFeedback);
       }
 
       // 3. Fetch social links
@@ -333,8 +409,13 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
 
       if (socialError) {
         hasAnyError = true;
-      } else if (socialData && socialData.length > 0) {
-        setSocialLinks(socialData as SocialLinkItem[]);
+        setSocialLinks(loadLocalData(LS_KEYS.SOCIAL_LINKS, DEFAULT_SOCIAL_LINKS));
+      } else if (socialData !== null) {
+        const validSocial = socialData.filter(
+          (s: SocialLinkItem) => !deletedSet.has(String(s.id))
+        );
+        setSocialLinks(validSocial as SocialLinkItem[]);
+        saveLocalData(LS_KEYS.SOCIAL_LINKS, validSocial);
       }
 
       // 4. Fetch projects
@@ -344,13 +425,18 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         .order("order_index", { ascending: true });
 
       if (projectsError) {
-        // Table might not exist yet, fallback to default projects
-      } else if (projectsData && projectsData.length > 0) {
-        setProjects(projectsData as ProjectItem[]);
+        // Table might not exist yet -> use local storage or defaults
+        setProjects(loadLocalData(LS_KEYS.PROJECTS, DEFAULT_PROJECTS));
+      } else if (projectsData !== null) {
+        const validProjects = projectsData.filter(
+          (p: ProjectItem) => !deletedSet.has(String(p.id))
+        );
+        setProjects(validProjects as ProjectItem[]);
+        saveLocalData(LS_KEYS.PROJECTS, validProjects);
       }
 
       if (hasAnyError) {
-        setDbError("Supabase tables not found or pending SQL setup. Using defaults.");
+        setDbError("Supabase tables pending SQL setup or using local persistence.");
       } else {
         setDbError(null);
       }
@@ -372,16 +458,30 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         { event: "*", schema: "public", table: "feedback" },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            setFeedback((prev) => [
-              payload.new as FeedbackItem,
-              ...prev.filter((f) => f.id !== (payload.new as FeedbackItem).id),
-            ]);
+            setFeedback((prev) => {
+              const updated = [
+                payload.new as FeedbackItem,
+                ...prev.filter((f) => String(f.id) !== String((payload.new as FeedbackItem).id)),
+              ];
+              saveLocalData(LS_KEYS.FEEDBACK, updated);
+              return updated;
+            });
           } else if (payload.eventType === "UPDATE") {
-            setFeedback((prev) =>
-              prev.map((f) => (f.id === (payload.new as FeedbackItem).id ? (payload.new as FeedbackItem) : f))
-            );
+            setFeedback((prev) => {
+              const updated = prev.map((f) =>
+                String(f.id) === String((payload.new as FeedbackItem).id)
+                  ? (payload.new as FeedbackItem)
+                  : f
+              );
+              saveLocalData(LS_KEYS.FEEDBACK, updated);
+              return updated;
+            });
           } else if (payload.eventType === "DELETE") {
-            setFeedback((prev) => prev.filter((f) => f.id !== payload.old.id));
+            setFeedback((prev) => {
+              const updated = prev.filter((f) => String(f.id) !== String(payload.old.id));
+              saveLocalData(LS_KEYS.FEEDBACK, updated);
+              return updated;
+            });
           }
         }
       )
@@ -391,10 +491,11 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         (payload) => {
           if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
             const updated = payload.new as SectionItem;
-            setSections((prev) => ({
-              ...prev,
-              [updated.key]: updated.value,
-            }));
+            setSections((prev) => {
+              const next = { ...prev, [updated.key]: updated.value };
+              saveLocalData(LS_KEYS.SECTIONS, next);
+              return next;
+            });
           }
         }
       )
@@ -403,16 +504,28 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         { event: "*", schema: "public", table: "social_links" },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            setSocialLinks((prev) => [
-              ...prev.filter((s) => s.id !== payload.new.id),
-              payload.new as SocialLinkItem,
-            ]);
+            setSocialLinks((prev) => {
+              const updated = [
+                ...prev.filter((s) => String(s.id) !== String(payload.new.id)),
+                payload.new as SocialLinkItem,
+              ];
+              saveLocalData(LS_KEYS.SOCIAL_LINKS, updated);
+              return updated;
+            });
           } else if (payload.eventType === "UPDATE") {
-            setSocialLinks((prev) =>
-              prev.map((s) => (s.id === payload.new.id ? (payload.new as SocialLinkItem) : s))
-            );
+            setSocialLinks((prev) => {
+              const updated = prev.map((s) =>
+                String(s.id) === String(payload.new.id) ? (payload.new as SocialLinkItem) : s
+              );
+              saveLocalData(LS_KEYS.SOCIAL_LINKS, updated);
+              return updated;
+            });
           } else if (payload.eventType === "DELETE") {
-            setSocialLinks((prev) => prev.filter((s) => s.id !== payload.old.id));
+            setSocialLinks((prev) => {
+              const updated = prev.filter((s) => String(s.id) !== String(payload.old.id));
+              saveLocalData(LS_KEYS.SOCIAL_LINKS, updated);
+              return updated;
+            });
           }
         }
       )
@@ -421,18 +534,28 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         { event: "*", schema: "public", table: "projects" },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            setProjects((prev) => [
-              ...prev.filter((p) => String(p.id) !== String(payload.new.id)),
-              payload.new as ProjectItem,
-            ]);
+            setProjects((prev) => {
+              const updated = [
+                ...prev.filter((p) => String(p.id) !== String(payload.new.id)),
+                payload.new as ProjectItem,
+              ];
+              saveLocalData(LS_KEYS.PROJECTS, updated);
+              return updated;
+            });
           } else if (payload.eventType === "UPDATE") {
-            setProjects((prev) =>
-              prev.map((p) =>
+            setProjects((prev) => {
+              const updated = prev.map((p) =>
                 String(p.id) === String(payload.new.id) ? (payload.new as ProjectItem) : p
-              )
-            );
+              );
+              saveLocalData(LS_KEYS.PROJECTS, updated);
+              return updated;
+            });
           } else if (payload.eventType === "DELETE") {
-            setProjects((prev) => prev.filter((p) => String(p.id) !== String(payload.old.id)));
+            setProjects((prev) => {
+              const updated = prev.filter((p) => String(p.id) !== String(payload.old.id));
+              saveLocalData(LS_KEYS.PROJECTS, updated);
+              return updated;
+            });
           }
         }
       )
@@ -492,20 +615,21 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         .select()
         .single();
 
-      if (error) {
+      if (error || !inserted) {
         const localItem: FeedbackItem = {
           id: `local-${Date.now()}`,
           ...newFeedback,
           created_at: new Date().toISOString(),
         };
-        setFeedback((prev) => [localItem, ...prev]);
+        const next = [localItem, ...feedback];
+        setFeedback(next);
+        saveLocalData(LS_KEYS.FEEDBACK, next);
         return { success: true };
       }
 
-      if (inserted) {
-        setFeedback((prev) => [inserted as FeedbackItem, ...prev]);
-      }
-
+      const next = [inserted as FeedbackItem, ...feedback];
+      setFeedback(next);
+      saveLocalData(LS_KEYS.FEEDBACK, next);
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || "Failed to submit feedback" };
@@ -514,17 +638,12 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
 
   const updateFeedbackStatus = async (id: string, status: "pending" | "approved") => {
     try {
-      setFeedback((prev) =>
-        prev.map((f) => (f.id === id ? { ...f, status } : f))
-      );
+      const next = feedback.map((f) => (String(f.id) === String(id) ? { ...f, status } : f));
+      setFeedback(next);
+      saveLocalData(LS_KEYS.FEEDBACK, next);
 
-      const { error } = await supabase
-        .from("feedback")
-        .update({ status })
-        .eq("id", id);
-
-      if (error) {
-        console.warn("Feedback update reported:", error.message);
+      if (isUUID(id)) {
+        await supabase.from("feedback").update({ status }).eq("id", id);
       }
       return { success: true };
     } catch (err: any) {
@@ -534,12 +653,22 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
 
   const deleteFeedback = async (id: string) => {
     try {
-      setFeedback((prev) => prev.filter((f) => f.id !== id));
+      // 1. Mark as deleted permanently in local tracking
+      markIdAsDeleted(id);
 
-      const { error } = await supabase.from("feedback").delete().eq("id", id);
-      if (error) {
-        console.warn("Feedback delete reported:", error.message);
+      // 2. Remove from state and save to localStorage immediately
+      const next = feedback.filter((f) => String(f.id) !== String(id));
+      setFeedback(next);
+      saveLocalData(LS_KEYS.FEEDBACK, next);
+
+      // 3. Delete from Supabase if valid UUID, or delete by matching name
+      const target = feedback.find((f) => String(f.id) === String(id));
+      if (isUUID(id)) {
+        await supabase.from("feedback").delete().eq("id", id);
+      } else if (target) {
+        await supabase.from("feedback").delete().eq("name", target.name);
       }
+
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || "Failed to delete feedback" };
@@ -548,15 +677,14 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
 
   const updateSection = async (key: string, value: string) => {
     try {
-      setSections((prev) => ({ ...prev, [key]: value }));
+      const next = { ...sections, [key]: value };
+      setSections(next);
+      saveLocalData(LS_KEYS.SECTIONS, next);
 
-      const { error } = await supabase
+      await supabase
         .from("sections")
         .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
 
-      if (error) {
-        console.warn("Section upsert reported:", error.message);
-      }
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || "Failed to save section" };
@@ -570,6 +698,7 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         newMap[e.key] = e.value;
       });
       setSections(newMap);
+      saveLocalData(LS_KEYS.SECTIONS, newMap);
 
       const records = entries.map((e) => ({
         key: e.key,
@@ -577,13 +706,8 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         updated_at: new Date().toISOString(),
       }));
 
-      const { error } = await supabase
-        .from("sections")
-        .upsert(records, { onConflict: "key" });
+      await supabase.from("sections").upsert(records, { onConflict: "key" });
 
-      if (error) {
-        console.warn("Bulk section upsert reported:", error.message);
-      }
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || "Failed to save sections in bulk" };
@@ -623,17 +747,12 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
 
   const updateSocialLink = async (id: string, platform: string, url: string) => {
     try {
-      setSocialLinks((prev) =>
-        prev.map((s) => (s.id === id ? { ...s, platform, url } : s))
-      );
+      const next = socialLinks.map((s) => (String(s.id) === String(id) ? { ...s, platform, url } : s));
+      setSocialLinks(next);
+      saveLocalData(LS_KEYS.SOCIAL_LINKS, next);
 
-      const { error } = await supabase
-        .from("social_links")
-        .update({ platform, url })
-        .eq("id", id);
-
-      if (error) {
-        console.warn("Social link update reported:", error.message);
+      if (isUUID(id)) {
+        await supabase.from("social_links").update({ platform, url }).eq("id", id);
       }
       return { success: true };
     } catch (err: any) {
@@ -656,11 +775,15 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
           platform,
           url,
         };
-        setSocialLinks((prev) => [...prev, localObj]);
+        const next = [...socialLinks, localObj];
+        setSocialLinks(next);
+        saveLocalData(LS_KEYS.SOCIAL_LINKS, next);
         return { success: true };
       }
 
-      setSocialLinks((prev) => [...prev, data as SocialLinkItem]);
+      const next = [...socialLinks, data as SocialLinkItem];
+      setSocialLinks(next);
+      saveLocalData(LS_KEYS.SOCIAL_LINKS, next);
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || "Failed to add social link" };
@@ -669,11 +792,18 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
 
   const deleteSocialLink = async (id: string) => {
     try {
-      setSocialLinks((prev) => prev.filter((s) => s.id !== id));
-      const { error } = await supabase.from("social_links").delete().eq("id", id);
-      if (error) {
-        console.warn("Delete social link reported:", error.message);
+      markIdAsDeleted(id);
+      const next = socialLinks.filter((s) => String(s.id) !== String(id));
+      setSocialLinks(next);
+      saveLocalData(LS_KEYS.SOCIAL_LINKS, next);
+
+      const target = socialLinks.find((s) => String(s.id) === String(id));
+      if (isUUID(id)) {
+        await supabase.from("social_links").delete().eq("id", id);
+      } else if (target) {
+        await supabase.from("social_links").delete().eq("platform", target.platform);
       }
+
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || "Failed to delete social link" };
@@ -700,11 +830,15 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
           id: `local-proj-${Date.now()}`,
           ...payload,
         };
-        setProjects((prev) => [...prev, localProject]);
+        const next = [...projects, localProject];
+        setProjects(next);
+        saveLocalData(LS_KEYS.PROJECTS, next);
         return { success: true };
       }
 
-      setProjects((prev) => [...prev, data as ProjectItem]);
+      const next = [...projects, data as ProjectItem];
+      setProjects(next);
+      saveLocalData(LS_KEYS.PROJECTS, next);
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || "Failed to add project" };
@@ -713,18 +847,21 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
 
   const updateProject = async (id: string | number, projectData: Partial<ProjectItem>) => {
     try {
-      setProjects((prev) =>
-        prev.map((p) => (String(p.id) === String(id) ? { ...p, ...projectData } : p))
+      const next = projects.map((p) =>
+        String(p.id) === String(id) ? { ...p, ...projectData } : p
       );
+      setProjects(next);
+      saveLocalData(LS_KEYS.PROJECTS, next);
 
-      const { error } = await supabase
-        .from("projects")
-        .update(projectData)
-        .eq("id", id);
-
-      if (error) {
-        console.warn("Project update warning:", error.message);
+      if (isUUID(id)) {
+        await supabase.from("projects").update(projectData).eq("id", id);
+      } else {
+        const target = projects.find((p) => String(p.id) === String(id));
+        if (target) {
+          await supabase.from("projects").update(projectData).eq("title", target.title);
+        }
       }
+
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || "Failed to update project" };
@@ -733,11 +870,22 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
 
   const deleteProject = async (id: string | number) => {
     try {
-      setProjects((prev) => prev.filter((p) => String(p.id) !== String(id)));
-      const { error } = await supabase.from("projects").delete().eq("id", id);
-      if (error) {
-        console.warn("Project delete warning:", error.message);
+      // 1. Mark permanently deleted in local cache
+      markIdAsDeleted(id);
+
+      // 2. Remove immediately from React state and localStorage
+      const next = projects.filter((p) => String(p.id) !== String(id));
+      setProjects(next);
+      saveLocalData(LS_KEYS.PROJECTS, next);
+
+      // 3. Remove from Supabase DB
+      const target = projects.find((p) => String(p.id) === String(id));
+      if (isUUID(id)) {
+        await supabase.from("projects").delete().eq("id", id);
+      } else if (target) {
+        await supabase.from("projects").delete().eq("title", target.title);
       }
+
       return { success: true };
     } catch (err: any) {
       return { success: false, error: err?.message || "Failed to delete project" };
@@ -747,6 +895,7 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
   const reorderProjects = async (newProjects: ProjectItem[]) => {
     try {
       setProjects(newProjects);
+      saveLocalData(LS_KEYS.PROJECTS, newProjects);
 
       const updates = newProjects.map((p, idx) => ({
         id: p.id,
@@ -754,7 +903,9 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
       }));
 
       for (const u of updates) {
-        await supabase.from("projects").update({ order_index: u.order_index }).eq("id", u.id);
+        if (isUUID(u.id)) {
+          await supabase.from("projects").update({ order_index: u.order_index }).eq("id", u.id);
+        }
       }
       return { success: true };
     } catch (err: any) {

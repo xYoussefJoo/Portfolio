@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
+import React, { useState, useMemo, useCallback, memo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Star,
   Quote,
@@ -8,14 +8,10 @@ import {
   MessageSquarePlus,
   X,
   CheckCircle2,
-  Sparkles,
   Send,
   Globe,
   Radio,
   Layers3,
-  SlidersHorizontal,
-  Flame,
-  User,
 } from "lucide-react";
 import { usePortfolioData } from "~/context/PortfolioDataContext";
 import { useLanguage } from "~/context/LanguageContext";
@@ -43,17 +39,17 @@ export function FeedbackCardDeck() {
 
   const items = approvedFeedback.length > 0 ? approvedFeedback : [];
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (items.length <= 1) return;
     setDirection("right");
     setCurrentIndex((prev) => (prev + 1) % items.length);
-  };
+  }, [items.length]);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     if (items.length <= 1) return;
     setDirection("left");
     setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-  };
+  }, [items.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,20 +96,19 @@ export function FeedbackCardDeck() {
     avatar_url: null,
   };
 
-  // Helper for duplicate array for seamless infinite marquee loop
-  const getLaneItems = (offset: number) => {
-    if (items.length === 0) return [];
-    let lane = items.filter((_, idx) => idx % 2 === offset);
-    if (lane.length === 0) lane = items;
-    // Repeat to ensure continuous seamless loop width
-    while (lane.length < 6) {
-      lane = [...lane, ...items];
-    }
-    return [...lane, ...lane]; // Double for seamless loop
-  };
-
-  const lane1Items = getLaneItems(0);
-  const lane2Items = getLaneItems(1);
+  // Memoized marquee lanes — was recomputed + array-doubled on every render
+  const { lane1Items, lane2Items } = useMemo(() => {
+    const build = (offset: number) => {
+      if (items.length === 0) return [];
+      let lane = items.filter((_, idx) => idx % 2 === offset);
+      if (lane.length === 0) lane = items;
+      while (lane.length < 6) {
+        lane = [...lane, ...items];
+      }
+      return [...lane, ...lane];
+    };
+    return { lane1Items: build(0), lane2Items: build(1) };
+  }, [items]);
 
   return (
     <div className="w-full relative space-y-8">
@@ -295,6 +290,10 @@ export function FeedbackCardDeck() {
                       <img
                         src={currentItem.avatar_url}
                         alt={currentItem.name}
+                        loading="lazy"
+                        decoding="async"
+                        width={48}
+                        height={48}
                         className="w-full h-full object-cover rounded-[14px]"
                       />
                     ) : (
@@ -526,7 +525,7 @@ export function FeedbackCardDeck() {
 // ----------------------------------------------------------------------------
 // BANNER COMMENT CARD (For Continuous Infinite Scrolling Ribbon)
 // ----------------------------------------------------------------------------
-function BannerCommentCard({ feedback }: { feedback: FeedbackItem }) {
+const BannerCommentCard = memo(function BannerCommentCard({ feedback }: { feedback: FeedbackItem }) {
   return (
     <div className="w-[340px] md:w-[400px] flex-shrink-0 glass-card rounded-3xl p-6 border border-[#8A60F1]/20 hover:border-[#8A60F1]/60 hover:shadow-[0_10px_30px_rgba(138,96,241,0.25)] transition-all duration-300 hover:scale-[1.02] flex flex-col justify-between space-y-4 group">
       {/* Top Card Header: Avatar, Author, Star Rating */}
@@ -538,6 +537,10 @@ function BannerCommentCard({ feedback }: { feedback: FeedbackItem }) {
                 <img
                   src={feedback.avatar_url}
                   alt={feedback.name}
+                  loading="lazy"
+                  decoding="async"
+                  width={44}
+                  height={44}
                   className="w-full h-full object-cover rounded-[14px]"
                 />
               ) : (
@@ -586,4 +589,4 @@ function BannerCommentCard({ feedback }: { feedback: FeedbackItem }) {
       </div>
     </div>
   );
-}
+});

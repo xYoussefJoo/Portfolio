@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { translations, type Language, type TranslationSchema } from "../i18n/translations";
 
 interface LanguageContextType {
@@ -22,25 +22,34 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     } catch (e) {}
   }, []);
 
-  const setLanguage = (lang: Language) => {
+  const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
     try {
       localStorage.setItem("language", lang);
       document.documentElement.lang = lang;
     } catch (e) {}
-  };
+  }, []);
 
-  const toggleLanguage = () => {
-    const nextLang = language === "en" ? "de" : "en";
-    setLanguage(nextLang);
-  };
+  const toggleLanguage = useCallback(() => {
+    setLanguageState((prev) => {
+      const nextLang = prev === "en" ? "de" : "en";
+      try {
+        localStorage.setItem("language", nextLang);
+        document.documentElement.lang = nextLang;
+      } catch (e) {}
+      return nextLang;
+    });
+  }, []);
 
-  const value: LanguageContextType = {
-    language,
-    setLanguage,
-    toggleLanguage,
-    t: translations[language],
-  };
+  const value: LanguageContextType = useMemo(
+    () => ({
+      language,
+      setLanguage,
+      toggleLanguage,
+      t: translations[language],
+    }),
+    [language, setLanguage, toggleLanguage]
+  );
 
   return (
     <LanguageContext.Provider value={value}>

@@ -1,18 +1,15 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback, memo } from "react";
 import {
   ExternalLink,
   ChevronLeft,
   ChevronRight,
   RotateCcw,
-  Sparkles,
   Layers,
-  Heart,
   Compass,
   LayoutGrid,
   Layers3,
   ArrowRight,
   ArrowLeft,
-  MoveHorizontal,
   Flame,
   MousePointer2,
   Eye,
@@ -42,57 +39,77 @@ export function Projects() {
   const { t, language } = useLanguage();
   const { projects } = usePortfolioData();
 
-  const categories = [
-    { id: "all", name: t.projects.categories.all },
-    { id: "branding", name: t.projects.categories.branding },
-    { id: "packaging", name: t.projects.categories.packaging },
-    { id: "advertising", name: t.projects.categories.advertising },
-    { id: "editorial", name: t.projects.categories.editorial },
-  ];
+  const categories = useMemo(
+    () => [
+      { id: "all", name: t.projects.categories.all },
+      { id: "branding", name: t.projects.categories.branding },
+      { id: "packaging", name: t.projects.categories.packaging },
+      { id: "advertising", name: t.projects.categories.advertising },
+      { id: "editorial", name: t.projects.categories.editorial },
+    ],
+    [t]
+  );
 
-  const filteredProjects =
-    filter === "all"
-      ? projects
-      : projects.filter((project) => project.category === filter);
+  const filteredProjects = useMemo(
+    () =>
+      filter === "all"
+        ? projects
+        : projects.filter((project) => project.category === filter),
+    [filter, projects]
+  );
 
   // Reset current index if category changes
   useEffect(() => {
     setCurrentIndex(0);
   }, [filter]);
 
-  // Handle Swipe / Next / Prev
-  const handleNext = () => {
-    if (filteredProjects.length === 0) return;
-    setCurrentIndex((prev) => (prev + 1) % filteredProjects.length);
-  };
+  // Handle Swipe / Next / Prev — stable callbacks to avoid re-subscribing listeners
+  const handleNext = useCallback(() => {
+    setCurrentIndex((prev) => {
+      if (filteredProjects.length === 0) return prev;
+      return (prev + 1) % filteredProjects.length;
+    });
+  }, [filteredProjects.length]);
 
-  const handlePrev = () => {
-    if (filteredProjects.length === 0) return;
-    setCurrentIndex((prev) => (prev - 1 + filteredProjects.length) % filteredProjects.length);
-  };
+  const handlePrev = useCallback(() => {
+    setCurrentIndex((prev) => {
+      if (filteredProjects.length === 0) return prev;
+      return (prev - 1 + filteredProjects.length) % filteredProjects.length;
+    });
+  }, [filteredProjects.length]);
 
-  const handleReset = () => {
+  const handleReset = useCallback(() => {
     setCurrentIndex(0);
-  };
+  }, []);
 
-  // Keyboard arrow navigation
+  // Keyboard arrow navigation — only when projects section is in viewport
   useEffect(() => {
+    let inView = false;
+    const section = document.getElementById("projects");
+    const viewObs = section
+      ? new IntersectionObserver(([e]) => (inView = e.isIntersecting))
+      : null;
+    if (section && viewObs) viewObs.observe(section);
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (!inView) return;
       if (e.key === "ArrowRight") handleNext();
       if (e.key === "ArrowLeft") handlePrev();
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [filteredProjects.length]);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      viewObs?.disconnect();
+    };
+  }, [handleNext, handlePrev]);
 
   return (
     <section
       id="projects"
       className="py-32 px-6 md:px-12 relative overflow-hidden bg-grid-cyber transition-colors duration-350 select-none"
+      style={{ contentVisibility: "auto", containIntrinsicSize: "800px" } as React.CSSProperties}
     >
-      {/* Background Radial Glow Blobs */}
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#8A60F1]/10 blur-[150px] pointer-events-none animate-pulse-glow" />
-      <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[450px] bg-cyan-500/8 blur-[140px] pointer-events-none" />
+      {/* Background Radial Glow — single static layer (was 2 animated 500px blurs) */}
+      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#8A60F1]/10 blur-[150px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto space-y-16 relative z-10">
         {/* Section Header */}
@@ -385,6 +402,10 @@ export function Projects() {
                 <img
                   src={previewProject.image}
                   alt={previewProject.title}
+                  loading="lazy"
+                  decoding="async"
+                  width={1024}
+                  height={576}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
@@ -485,7 +506,7 @@ export function Projects() {
 // ----------------------------------------------------------------------------
 // Swipeable 3D Deck Card (Interactive 3D Gyroscopic Tilt & Holographic Sheen)
 // ----------------------------------------------------------------------------
-function SwipeableCard({
+const SwipeableCard = memo(function SwipeableCard({
   project,
   resolvedTitle,
   resolvedDesc,
@@ -712,6 +733,11 @@ function SwipeableCard({
           src={project.image}
           alt={resolvedTitle}
           draggable={false}
+          loading="lazy"
+          decoding="async"
+          width={800}
+          height={500}
+          sizes="(max-width: 768px) 100vw, 640px"
           className="w-full h-full object-cover select-none pointer-events-none"
         />
 
@@ -799,12 +825,12 @@ function SwipeableCard({
       </div>
     </motion.div>
   );
-}
+});
 
 // ----------------------------------------------------------------------------
 // Grid View Project Card with 3D Spotlight Tilt (Solid Color Styling)
 // ----------------------------------------------------------------------------
-function GridProjectCard({
+const GridProjectCard = memo(function GridProjectCard({
   project,
   title,
   description,
@@ -866,6 +892,11 @@ function GridProjectCard({
         <img
           src={project.image}
           alt={title}
+          loading="lazy"
+          decoding="async"
+          width={600}
+          height={450}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 400px"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30" />
@@ -916,4 +947,4 @@ function GridProjectCard({
       </div>
     </motion.div>
   );
-}
+});

@@ -111,7 +111,7 @@ export function ProjectsManager() {
     setFormTitleDe("");
     setFormCategory("branding");
     setFormImage(
-      "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=1200"
+      "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=60"
     );
     setFormDescription("");
     setFormDescriptionDe("");

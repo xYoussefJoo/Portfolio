@@ -47,9 +47,7 @@ export function ScrollReveal({
     observer.observe(currentRef);
 
     return () => {
-      if (currentRef) {
-        observer.unobserve(currentRef);
-      }
+      observer.disconnect();
     };
   }, [threshold, once]);
 

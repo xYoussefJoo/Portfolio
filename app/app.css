@@ -215,3 +215,30 @@ body {
   animation-play-state: paused;
 }
 
+/* Performance: skip off-screen section rendering work */
+section[id] {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 800px;
+}
+
+/* GPU hint for animated layers only */
+.animate-marquee-left,
+.animate-marquee-right,
+.animate-float,
+.animate-pulse-glow {
+  will-change: transform, opacity;
+}
+
+/* Respect reduced motion: kill marquee + pulse + float */
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee-left,
+  .animate-marquee-right,
+  .animate-float,
+  .animate-pulse-glow {
+    animation: none !important;
+  }
+  html, body {
+    scroll-behavior: auto;
+  }
+}
+

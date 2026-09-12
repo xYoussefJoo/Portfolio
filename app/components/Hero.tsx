@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Sparkles, ExternalLink } from "lucide-react";
-import * as THREE from "three";
 import { motion } from "framer-motion";
 import { useLanguage } from "~/context/LanguageContext";
 import { usePortfolioData } from "~/context/PortfolioDataContext";
@@ -101,347 +100,437 @@ export function Hero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [webglReady, setWebglReady] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
   const { t } = useLanguage();
   const { getSection, socialLinks } = usePortfolioData();
 
   useEffect(() => {
     setMounted(true);
+    try {
+      const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+      setReducedMotion(mq.matches);
+      const onChange = (e: MediaQueryListEvent) => setReducedMotion(e.matches);
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    } catch {
+      return;
+    }
   }, []);
 
+  // Gate WebGL behind visibility: only load three.js when hero is near viewport
   useEffect(() => {
-    if (!mounted || !canvasRef.current || !containerRef.current) return;
-
-    const container = containerRef.current;
-    const canvas = canvasRef.current;
-
-    const rect = container.getBoundingClientRect();
-    let width = rect.width || 400;
-    let height = rect.height || 450;
-
-    const scene = new THREE.Scene();
-    
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-    camera.position.z = 7.5;
-
-    const renderer = new THREE.WebGLRenderer({
-      canvas: canvas,
-      antialias: true,
-      alpha: true,
-    });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-    // Lights setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambientLight);
-
-    const purplePointLight = new THREE.PointLight(0x8A60F1, 4, 30);
-    purplePointLight.position.set(4, 4, 4);
-    scene.add(purplePointLight);
-
-    const cyanPointLight = new THREE.PointLight(0x00f0ff, 3.5, 30);
-    cyanPointLight.position.set(-4, -4, 4);
-    scene.add(cyanPointLight);
-
-    const mouseSpotLight = new THREE.PointLight(0xffffff, 2, 25);
-    mouseSpotLight.position.set(0, 0, 5);
-    scene.add(mouseSpotLight);
-
-    // Root 3D Logo Group
-    const logo3DGroup = new THREE.Group();
-    scene.add(logo3DGroup);
-
-    // Dynamic Floating Background Particles
-    const particlesCount = 120;
-    const particlesGeometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(particlesCount * 3);
-
-    for (let i = 0; i < particlesCount * 3; i += 3) {
-      positions[i] = (Math.random() - 0.5) * 12;
-      positions[i + 1] = (Math.random() - 0.5) * 12;
-      positions[i + 2] = (Math.random() - 0.5) * 8;
-    }
-
-    particlesGeometry.setAttribute(
-      "position",
-      new THREE.BufferAttribute(positions, 3)
-    );
-
-    const particlesMaterial = new THREE.PointsMaterial({
-      color: 0x8A60F1,
-      size: 0.045,
-      transparent: true,
-      opacity: 0.6,
-      blending: THREE.AdditiveBlending,
-    });
-
-    const particles = new THREE.Points(particlesGeometry, particlesMaterial);
-    scene.add(particles);
-
-    // Vector Orbit Rings (Representing Pen Tool & Vector Paths)
-    const ring1Geo = new THREE.TorusGeometry(2.3, 0.015, 16, 100);
-    const ring1Mat = new THREE.MeshStandardMaterial({
-      color: 0x8A60F1,
-      emissive: 0x8A60F1,
-      emissiveIntensity: 0.6,
-      roughness: 0.2,
-      metalness: 0.8,
-    });
-    const ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
-    ring1.rotation.x = Math.PI / 3;
-    ring1.rotation.y = Math.PI / 6;
-    logo3DGroup.add(ring1);
-
-    const ring2Geo = new THREE.TorusGeometry(2.6, 0.012, 16, 100);
-    const ring2Mat = new THREE.MeshStandardMaterial({
-      color: 0x00f0ff,
-      emissive: 0x00f0ff,
-      emissiveIntensity: 0.5,
-      roughness: 0.2,
-      metalness: 0.8,
-    });
-    const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
-    ring2.rotation.x = -Math.PI / 4;
-    ring2.rotation.y = Math.PI / 3;
-    logo3DGroup.add(ring2);
-
-    // Vector Anchor Point Cubes (Graphic Designer Pen Tool Handles)
-    const handleGeo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
-    const handleMat = new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      emissive: 0x8A60F1,
-      emissiveIntensity: 0.8,
-    });
-
-    const anchorNodes: THREE.Mesh[] = [];
-    const numAnchors = 4;
-    for (let i = 0; i < numAnchors; i++) {
-      const anchor = new THREE.Mesh(handleGeo, handleMat);
-      logo3DGroup.add(anchor);
-      anchorNodes.push(anchor);
-    }
-
-    // Load and process Keso3DLogo to create clean transparent cutout texture and 3D extruded layers
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = "/img/Keso3DLogo.jpeg";
-
-    const planeGeo = new THREE.PlaneGeometry(3.4, 3.4);
-    const meshesToDispose: THREE.Material[] = [];
-    const geometriesToDispose: THREE.BufferGeometry[] = [ring1Geo, ring2Geo, handleGeo, planeGeo, particlesGeometry];
-
-    img.onload = () => {
-      // Offscreen canvas for chroma-keying black background to transparent
-      const offscreenCanvas = document.createElement("canvas");
-      const imgW = img.width;
-      const imgH = img.height;
-      offscreenCanvas.width = imgW;
-      offscreenCanvas.height = imgH;
-      const ctx = offscreenCanvas.getContext("2d");
-      if (!ctx) return;
-
-      ctx.drawImage(img, 0, 0);
-      const imgData = ctx.getImageData(0, 0, imgW, imgH);
-      const data = imgData.data;
-
-      // Clean chroma keying with perimeter boundary clearance to completely eliminate edge/border artifacts
-      const borderMargin = 8;
-
-      for (let y = 0; y < imgH; y++) {
-        for (let x = 0; x < imgW; x++) {
-          const idx = (y * imgW + x) * 4;
-
-          // Clear outer perimeter pixels to prevent texture edge clamp bleed
-          if (x < borderMargin || x >= imgW - borderMargin || y < borderMargin || y >= imgH - borderMargin) {
-            data[idx + 3] = 0;
-            continue;
-          }
-
-          const r = data[idx];
-          const g = data[idx + 1];
-          const b = data[idx + 2];
-          const maxVal = Math.max(r, g, b);
-
-          // Clean cutoff for dark background & compression artifacts
-          if (maxVal < 42) {
-            data[idx + 3] = 0;
-          } else if (maxVal < 80) {
-            const factor = (maxVal - 42) / 38;
-            data[idx + 3] = Math.floor(factor * factor * 255);
+    if (!mounted || reducedMotion) return;
+    const el = containerRef.current;
+    if (!el) return;
+    // If already visible on load, boot immediately; otherwise wait for intersection
+    const bootIfVisible = () => {
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight * 1.2 && r.bottom > -200) {
+        setWebglReady(true);
+        return true;
+      }
+      return false;
+    };
+    if (bootIfVisible()) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setWebglReady(true);
+            obs.disconnect();
+            break;
           }
         }
+      },
+      { rootMargin: "300px 0px" }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [mounted, reducedMotion]);
+
+  useEffect(() => {
+    if (!mounted || !webglReady || reducedMotion) return;
+    if (!canvasRef.current || !containerRef.current) return;
+
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
+
+    const init = async () => {
+      // Dynamic import keeps three.js out of the initial bundle
+      const THREE = await import("three");
+      if (cancelled || !canvasRef.current || !containerRef.current) return;
+
+      const container = containerRef.current;
+      const canvas = canvasRef.current;
+
+      const isMobile =
+        window.matchMedia("(max-width: 768px)").matches ||
+        (navigator as any).hardwareConcurrency <= 4;
+
+      const rect = container.getBoundingClientRect();
+      const width = rect.width || 400;
+      const height = rect.height || 450;
+
+      const scene = new THREE.Scene();
+
+      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+      camera.position.z = 7.5;
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: !isMobile,
+        alpha: true,
+        powerPreference: isMobile ? "low-power" : "high-performance",
+      });
+      renderer.setSize(width, height);
+      // Cap DPR: 1 on mobile, 1.5 on desktop — was 2 (2x fragment cost)
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 1.5));
+
+      // Lights setup
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+
+      const purplePointLight = new THREE.PointLight(0x8a60f1, 4, 30);
+      purplePointLight.position.set(4, 4, 4);
+      scene.add(purplePointLight);
+
+      const cyanPointLight = new THREE.PointLight(0x00f0ff, 3.5, 30);
+      cyanPointLight.position.set(-4, -4, 4);
+      scene.add(cyanPointLight);
+
+      const mouseSpotLight = new THREE.PointLight(0xffffff, 2, 25);
+      mouseSpotLight.position.set(0, 0, 5);
+      scene.add(mouseSpotLight);
+
+      // Root 3D Logo Group
+      const logo3DGroup = new THREE.Group();
+      scene.add(logo3DGroup);
+
+      // Dynamic Floating Background Particles (reduced on mobile)
+      const particlesCount = isMobile ? 60 : 100;
+      const particlesGeometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(particlesCount * 3);
+
+      for (let i = 0; i < particlesCount * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 12;
+        positions[i + 1] = (Math.random() - 0.5) * 12;
+        positions[i + 2] = (Math.random() - 0.5) * 8;
       }
 
-      ctx.putImageData(imgData, 0, 0);
+      particlesGeometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(positions, 3)
+      );
 
-      const transparentTexture = new THREE.CanvasTexture(offscreenCanvas);
-      transparentTexture.colorSpace = THREE.SRGBColorSpace;
-      transparentTexture.minFilter = THREE.LinearFilter;
-      transparentTexture.magFilter = THREE.LinearFilter;
-      transparentTexture.wrapS = THREE.ClampToEdgeWrapping;
-      transparentTexture.wrapT = THREE.ClampToEdgeWrapping;
+      const particlesMaterial = new THREE.PointsMaterial({
+        color: 0x8a60f1,
+        size: 0.045,
+        transparent: true,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending,
+      });
 
-      // Create 3D Extruded Relief Layers along Z axis without edge clipping
-      const layerCount = 8;
-      const totalDepth = 0.24;
+      const particles = new THREE.Points(particlesGeometry, particlesMaterial);
+      scene.add(particles);
 
-      for (let i = 0; i < layerCount; i++) {
-        const z = -totalDepth / 2 + (i / (layerCount - 1)) * totalDepth;
-        const isFront = i === layerCount - 1;
-        const isBack = i === 0;
-        const isOuter = isFront || isBack;
+      // Vector Orbit Rings (Representing Pen Tool & Vector Paths)
+      const ring1Geo = new THREE.TorusGeometry(2.3, 0.015, 16, isMobile ? 48 : 100);
+      const ring1Mat = new THREE.MeshStandardMaterial({
+        color: 0x8a60f1,
+        emissive: 0x8a60f1,
+        emissiveIntensity: 0.6,
+        roughness: 0.2,
+        metalness: 0.8,
+      });
+      const ring1 = new THREE.Mesh(ring1Geo, ring1Mat);
+      ring1.rotation.x = Math.PI / 3;
+      ring1.rotation.y = Math.PI / 6;
+      logo3DGroup.add(ring1);
 
-        const layerMat = new THREE.MeshStandardMaterial({
-          map: transparentTexture,
-          transparent: true,
-          alphaTest: 0.08,
-          opacity: isOuter ? 1.0 : 0.9,
-          roughness: isOuter ? 0.2 : 0.5,
-          metalness: isOuter ? 0.5 : 0.8,
-          emissive: isOuter ? 0x221133 : 0x442266,
-          emissiveIntensity: isOuter ? 0.35 : 0.6,
-          side: THREE.DoubleSide,
-          depthWrite: isOuter,
+      const ring2Geo = new THREE.TorusGeometry(2.6, 0.012, 16, isMobile ? 48 : 100);
+      const ring2Mat = new THREE.MeshStandardMaterial({
+        color: 0x00f0ff,
+        emissive: 0x00f0ff,
+        emissiveIntensity: 0.5,
+        roughness: 0.2,
+        metalness: 0.8,
+      });
+      const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+      ring2.rotation.x = -Math.PI / 4;
+      ring2.rotation.y = Math.PI / 3;
+      logo3DGroup.add(ring2);
+
+      // Vector Anchor Point Cubes (Graphic Designer Pen Tool Handles)
+      const handleGeo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+      const handleMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0x8a60f1,
+        emissiveIntensity: 0.8,
+      });
+
+      const anchorNodes: any[] = [];
+      const numAnchors = 4;
+      for (let i = 0; i < numAnchors; i++) {
+        const anchor = new THREE.Mesh(handleGeo, handleMat);
+        logo3DGroup.add(anchor);
+        anchorNodes.push(anchor);
+      }
+
+      const planeGeo = new THREE.PlaneGeometry(3.4, 3.4);
+      const haloGeo = new THREE.PlaneGeometry(3.6, 3.6);
+      const materialsToDispose: any[] = [];
+      const geometriesToDispose: any[] = [ring1Geo, ring2Geo, handleGeo, planeGeo, haloGeo, particlesGeometry];
+      let transparentTexture: any = null;
+      let haloMesh: any = null;
+
+      // Load and process Keso3DLogo — decode off-main-thread when possible
+      const loadLogo = async () => {
+        try {
+          const res = await fetch("/img/Keso3DLogo.jpeg");
+          const blob = await res.blob();
+          const bmp = await createImageBitmap(blob);
+          const imgW = bmp.width;
+          const imgH = bmp.height;
+          const offscreenCanvas = document.createElement("canvas");
+          offscreenCanvas.width = imgW;
+          offscreenCanvas.height = imgH;
+          const ctx = offscreenCanvas.getContext("2d", { willReadFrequently: true });
+          if (!ctx) {
+            bmp.close();
+            return;
+          }
+          ctx.drawImage(bmp, 0, 0);
+          bmp.close();
+          const imgData = ctx.getImageData(0, 0, imgW, imgH);
+          const data = imgData.data;
+
+          const borderMargin = 8;
+          for (let y = 0; y < imgH; y++) {
+            for (let x = 0; x < imgW; x++) {
+              const idx = (y * imgW + x) * 4;
+              if (x < borderMargin || x >= imgW - borderMargin || y < borderMargin || y >= imgH - borderMargin) {
+                data[idx + 3] = 0;
+                continue;
+              }
+              const r = data[idx];
+              const g = data[idx + 1];
+              const b = data[idx + 2];
+              const maxVal = Math.max(r, g, b);
+              if (maxVal < 42) {
+                data[idx + 3] = 0;
+              } else if (maxVal < 80) {
+                const factor = (maxVal - 42) / 38;
+                data[idx + 3] = Math.floor(factor * factor * 255);
+              }
+            }
+          }
+          ctx.putImageData(imgData, 0, 0);
+
+          if (cancelled) return;
+          transparentTexture = new THREE.CanvasTexture(offscreenCanvas);
+          transparentTexture.colorSpace = THREE.SRGBColorSpace;
+          transparentTexture.minFilter = THREE.LinearFilter;
+          transparentTexture.magFilter = THREE.LinearFilter;
+          transparentTexture.wrapS = THREE.ClampToEdgeWrapping;
+          transparentTexture.wrapT = THREE.ClampToEdgeWrapping;
+
+          // Reduced extruded layers: 8 -> 5 (same depth, 37% fewer transparent draws)
+          const layerCount = isMobile ? 4 : 5;
+          const totalDepth = 0.24;
+          for (let i = 0; i < layerCount; i++) {
+            const z = -totalDepth / 2 + (i / (layerCount - 1)) * totalDepth;
+            const isFront = i === layerCount - 1;
+            const isBack = i === 0;
+            const isOuter = isFront || isBack;
+            const layerMat = new THREE.MeshStandardMaterial({
+              map: transparentTexture,
+              transparent: true,
+              alphaTest: 0.08,
+              opacity: isOuter ? 1.0 : 0.9,
+              roughness: isOuter ? 0.2 : 0.5,
+              metalness: isOuter ? 0.5 : 0.8,
+              emissive: isOuter ? 0x221133 : 0x442266,
+              emissiveIntensity: isOuter ? 0.35 : 0.6,
+              side: THREE.DoubleSide,
+              depthWrite: isOuter,
+            });
+            const layerMesh = new THREE.Mesh(planeGeo, layerMat);
+            layerMesh.position.z = z;
+            logo3DGroup.add(layerMesh);
+            materialsToDispose.push(layerMat);
+          }
+
+          const haloMat = new THREE.MeshBasicMaterial({
+            map: transparentTexture,
+            transparent: true,
+            alphaTest: 0.05,
+            opacity: 0.35,
+            blending: THREE.AdditiveBlending,
+            color: 0x8a60f1,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+          });
+          haloMesh = new THREE.Mesh(haloGeo, haloMat);
+          haloMesh.position.z = -0.04;
+          logo3DGroup.add(haloMesh);
+          materialsToDispose.push(haloMat);
+        } catch {
+          // Silently keep rings + particles if logo fails
+        }
+      };
+      loadLogo();
+
+      // Mouse parallax — passive + rAF-throttled via lerp in animate loop
+      let mouseX = 0;
+      let mouseY = 0;
+      let targetX = 0;
+      let targetY = 0;
+      let rafPending = false;
+      let lastClientX = 0;
+      let lastClientY = 0;
+
+      const applyMouse = () => {
+        rafPending = false;
+        const bounds = container.getBoundingClientRect();
+        mouseX = ((lastClientX - bounds.left) / (bounds.width || 400) - 0.5) * 1.5;
+        mouseY = -((lastClientY - bounds.top) / (bounds.height || 450) - 0.5) * 1.5;
+      };
+
+      const handleMouseMove = (event: MouseEvent) => {
+        lastClientX = event.clientX;
+        lastClientY = event.clientY;
+        if (!rafPending) {
+          rafPending = true;
+          requestAnimationFrame(applyMouse);
+        }
+      };
+
+      window.addEventListener("mousemove", handleMouseMove, { passive: true });
+
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const w = entry.contentRect.width || container.clientWidth || 400;
+          const h = entry.contentRect.height || container.clientHeight || 450;
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          renderer.setSize(w, h);
+        }
+      });
+      resizeObserver.observe(container);
+
+      // Pause rendering when hero is off-screen or tab hidden
+      let isInView = true;
+      const viewObserver = new IntersectionObserver(
+        (entries) => {
+          isInView = entries[0]?.isIntersecting ?? true;
+        },
+        { threshold: 0 }
+      );
+      viewObserver.observe(container);
+
+      let isTabVisible = !document.hidden;
+      const onVisibility = () => {
+        isTabVisible = !document.hidden;
+      };
+      document.addEventListener("visibilitychange", onVisibility);
+
+      const clock = new THREE.Clock();
+      let reqId: number;
+
+      const animate = () => {
+        reqId = requestAnimationFrame(animate);
+        if (!isInView || !isTabVisible) return;
+
+        const elapsedTime = clock.getElapsedTime();
+
+        const floatY = Math.sin(elapsedTime * 1.2) * 0.15;
+        const baseRotY = Math.sin(elapsedTime * 0.6) * 0.35;
+        const baseRotX = Math.cos(elapsedTime * 0.8) * 0.2;
+
+        ring1.rotation.z = elapsedTime * 0.4;
+        ring2.rotation.z = -elapsedTime * 0.35;
+
+        anchorNodes.forEach((node, index) => {
+          const angle = elapsedTime * 0.4 + (index * Math.PI) / 2;
+          const radius = 2.3;
+          node.position.x = Math.cos(angle) * radius * Math.cos(Math.PI / 6);
+          node.position.y = Math.sin(angle) * radius * Math.sin(Math.PI / 3);
+          node.position.z = Math.sin(angle) * radius * Math.cos(Math.PI / 3);
+          node.rotation.x = elapsedTime;
+          node.rotation.y = elapsedTime;
         });
 
-        const layerMesh = new THREE.Mesh(planeGeo, layerMat);
-        layerMesh.position.z = z;
-        logo3DGroup.add(layerMesh);
-        meshesToDispose.push(layerMat);
-      }
+        particles.rotation.y = -elapsedTime * 0.02;
 
-      // Backglow Halo Plane
-      const haloMat = new THREE.MeshBasicMaterial({
-        map: transparentTexture,
-        transparent: true,
-        alphaTest: 0.05,
-        opacity: 0.35,
-        blending: THREE.AdditiveBlending,
-        color: 0x8A60F1,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      });
-      const haloMesh = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 3.6), haloMat);
-      haloMesh.position.z = -0.04;
-      logo3DGroup.add(haloMesh);
-      meshesToDispose.push(haloMat);
+        targetX = targetX * 0.9 + mouseX * 0.1;
+        targetY = targetY * 0.9 + mouseY * 0.1;
+
+        logo3DGroup.position.y = floatY + targetY * 0.5;
+        logo3DGroup.position.x = targetX * 0.5;
+        logo3DGroup.rotation.y = baseRotY + targetX * 0.8;
+        logo3DGroup.rotation.x = baseRotX - targetY * 0.8;
+
+        mouseSpotLight.position.x = targetX * 6;
+        mouseSpotLight.position.y = targetY * 6;
+
+        camera.lookAt(scene.position);
+        renderer.render(scene, camera);
+      };
+
+      animate();
+
+      const handleThemeChanged = (e: Event) => {
+        const customEvent = e as CustomEvent<"dark" | "light">;
+        const isLight = customEvent.detail === "light";
+        ambientLight.intensity = isLight ? 1.1 : 0.7;
+        particlesMaterial.color.setHex(isLight ? 0x7038e8 : 0x8a60f1);
+        particlesMaterial.opacity = isLight ? 0.85 : 0.6;
+      };
+
+      window.addEventListener("themeChanged", handleThemeChanged);
+
+      cleanup = () => {
+        cancelAnimationFrame(reqId);
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("themeChanged", handleThemeChanged);
+        document.removeEventListener("visibilitychange", onVisibility);
+        resizeObserver.disconnect();
+        viewObserver.disconnect();
+        geometriesToDispose.forEach((g) => g.dispose());
+        materialsToDispose.forEach((m) => m.dispose());
+        if (transparentTexture) transparentTexture.dispose();
+        ring1Mat.dispose();
+        ring2Mat.dispose();
+        handleMat.dispose();
+        particlesMaterial.dispose();
+        renderer.dispose();
+      };
     };
 
-    // Mouse Parallax coordinates
-    let mouseX = 0;
-    let mouseY = 0;
-    let targetX = 0;
-    let targetY = 0;
-
-    const handleMouseMove = (event: MouseEvent) => {
-      const bounds = container.getBoundingClientRect();
-      mouseX = ((event.clientX - bounds.left) / (bounds.width || 400) - 0.5) * 1.5;
-      mouseY = -((event.clientY - bounds.top) / (bounds.height || 450) - 0.5) * 1.5;
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const w = entry.contentRect.width || container.clientWidth || 400;
-        const h = entry.contentRect.height || container.clientHeight || 450;
-        
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
-        renderer.setSize(w, h);
-      }
-    });
-    resizeObserver.observe(container);
-
-    const clock = new THREE.Clock();
-    let reqId: number;
-
-    const animate = () => {
-      reqId = requestAnimationFrame(animate);
-
-      const elapsedTime = clock.getElapsedTime();
-
-      // Smooth Floating & Subtle 3D Tumbling Oscillations
-      const floatY = Math.sin(elapsedTime * 1.2) * 0.15;
-      const baseRotY = Math.sin(elapsedTime * 0.6) * 0.35;
-      const baseRotX = Math.cos(elapsedTime * 0.8) * 0.2;
-
-      // Rotate Orbit Rings
-      ring1.rotation.z = elapsedTime * 0.4;
-      ring2.rotation.z = -elapsedTime * 0.35;
-
-      // Position Anchor Nodes around the rings
-      anchorNodes.forEach((node, index) => {
-        const angle = elapsedTime * 0.4 + (index * Math.PI) / 2;
-        const radius = 2.3;
-        node.position.x = Math.cos(angle) * radius * Math.cos(Math.PI / 6);
-        node.position.y = Math.sin(angle) * radius * Math.sin(Math.PI / 3);
-        node.position.z = Math.sin(angle) * radius * Math.cos(Math.PI / 3);
-        node.rotation.x = elapsedTime;
-        node.rotation.y = elapsedTime;
-      });
-
-      // Background particle drift
-      particles.rotation.y = -elapsedTime * 0.02;
-
-      // Interactive Mouse Smoothing
-      targetX = targetX * 0.9 + mouseX * 0.1;
-      targetY = targetY * 0.9 + mouseY * 0.1;
-
-      // Apply 3D Transforms
-      logo3DGroup.position.y = floatY + targetY * 0.5;
-      logo3DGroup.position.x = targetX * 0.5;
-      logo3DGroup.rotation.y = baseRotY + targetX * 0.8;
-      logo3DGroup.rotation.x = baseRotX - targetY * 0.8;
-
-      // Dynamic light tracking mouse
-      mouseSpotLight.position.x = targetX * 6;
-      mouseSpotLight.position.y = targetY * 6;
-
-      camera.lookAt(scene.position);
-      renderer.render(scene, camera);
-    };
-
-    animate();
-
-    // Dynamic Theme Listener for 3D Studio lighting
-    const handleThemeChanged = (e: Event) => {
-      const customEvent = e as CustomEvent<"dark" | "light">;
-      const isLight = customEvent.detail === "light";
-      ambientLight.intensity = isLight ? 1.1 : 0.7;
-      particlesMaterial.color.setHex(isLight ? 0x7038e8 : 0x8A60F1);
-      particlesMaterial.opacity = isLight ? 0.85 : 0.6;
-    };
-
-    window.addEventListener("themeChanged", handleThemeChanged);
+    init();
 
     return () => {
-      cancelAnimationFrame(reqId);
-      window.removeEventListener("mousemove", handleMouseMove);
-      window.removeEventListener("themeChanged", handleThemeChanged);
-      resizeObserver.disconnect();
-      geometriesToDispose.forEach((g) => g.dispose());
-      meshesToDispose.forEach((m) => m.dispose());
-      ring1Mat.dispose();
-      ring2Mat.dispose();
-      handleMat.dispose();
-      particlesMaterial.dispose();
-      renderer.dispose();
+      cancelled = true;
+      if (cleanup) cleanup();
     };
-  }, [mounted]);
+  }, [mounted, webglReady, reducedMotion]);
+
+  const showCanvas = mounted && webglReady && !reducedMotion;
 
   return (
     <section
       id="home"
       className="min-h-screen flex flex-col justify-center pt-28 pb-16 px-6 md:px-12 relative overflow-hidden bg-grid-curved transition-colors duration-350"
+      style={{ contentVisibility: "auto" } as React.CSSProperties}
     >
-      {/* Background gradients */}
-      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-[#8A60F1]/10 blur-[130px] pointer-events-none animate-pulse-glow" />
+      {/* Background gradients — single GPU-cheap layer */}
+      <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full bg-[#8A60F1]/10 blur-[130px] pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] rounded-full bg-cyan-500/5 blur-[110px] pointer-events-none" />
 
       {/* Grid container with clean layouts and padding */}
       <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-        
+
         {/* Left Column - Biography details */}
         <div className="lg:col-span-7 space-y-8 text-[var(--text-primary)]">
           <motion.div
@@ -553,10 +642,18 @@ export function Hero() {
           ref={containerRef}
           className="lg:col-span-5 flex justify-center items-center w-full h-[350px] md:h-[450px] relative cursor-pointer"
         >
-          {mounted ? (
+          {showCanvas ? (
             <canvas ref={canvasRef} className="absolute inset-0 w-full h-full outline-none pointer-events-auto" />
           ) : (
-            <div className="w-48 h-48 rounded-full border-4 border-t-[#8A60F1] border-white/10 animate-spin" />
+            <img
+              src="/img/Keso3DLogo.jpeg"
+              alt="Kero Amir 3D logo"
+              width={420}
+              height={420}
+              fetchPriority="high"
+              decoding="async"
+              className="w-64 h-64 md:w-80 md:h-80 object-cover rounded-3xl border border-[#8A60F1]/30 shadow-[0_0_40px_rgba(138,96,241,0.25)]"
+            />
           )}
           <div className="absolute w-60 h-60 rounded-full bg-[#8A60F1]/5 blur-3xl pointer-events-none" />
         </div>

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import type { User } from "@supabase/supabase-js";
 import {
   supabase,
@@ -82,7 +82,7 @@ const DEFAULT_PROJECTS: ProjectItem[] = [
     description: "Comprehensive visual identity, botanical packaging design, and 3D product renders in Adobe Dimension & Photoshop.",
     description_de: "Ganzheitliche Markenidentität, botanisches Verpackungsdesign und fotorealistische 3D-Renderings in Adobe Dimension & Photoshop.",
     category: "branding",
-    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=60",
     tags: ["Adobe Illustrator", "Photoshop", "Brand System", "Typography"],
     clientLocation: "United States & France",
     clientLocation_de: "USA & Frankreich",
@@ -101,7 +101,7 @@ const DEFAULT_PROJECTS: ProjectItem[] = [
     description: "High-octane can packaging, dynamic vector illustrations in Adobe Illustrator, and 3D metallic foil finish mockup.",
     description_de: "Dynamisches Dosendesign, Vektorillustrationen in Adobe Illustrator und 3D-Mockups mit metallischen Folieneffekten.",
     category: "packaging",
-    image: "https://images.unsplash.com/photo-1556742049-0a67c55c8cc0?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1556742049-0a67c55c8cc0?auto=format&fit=crop&w=800&q=60",
     tags: ["Adobe Dimension", "Illustrator", "Packaging", "3D Render"],
     clientLocation: "Germany",
     clientLocation_de: "Deutschland",
@@ -120,7 +120,7 @@ const DEFAULT_PROJECTS: ProjectItem[] = [
     description: "Complete visual branding, custom typographic logotype, and advertising poster series for European audiophile brand.",
     description_de: "Komplettes visuelles Branding, individuelles typografisches Logo und Werbeplakat-Serie für europäische Audiomarke.",
     category: "advertising",
-    image: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&w=800&q=60",
     tags: ["After Effects", "Photoshop", "Motion Graphics", "Billboards"],
     clientLocation: "United States",
     clientLocation_de: "USA",
@@ -139,7 +139,7 @@ const DEFAULT_PROJECTS: ProjectItem[] = [
     description: "Editorial layout, grid architecture, typography, and premium print-ready book in Adobe InDesign for Berlin studio.",
     description_de: "Redaktionelles Layout, typografisches Rastersystem und hochwertiges, druckfertiges Buch in Adobe InDesign für Berliner Studio.",
     category: "editorial",
-    image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=60",
     tags: ["Adobe InDesign", "Photoshop", "Editorial Design", "Pre-Press"],
     clientLocation: "Egypt & Germany",
     clientLocation_de: "Ägypten & Deutschland",
@@ -158,7 +158,7 @@ const DEFAULT_PROJECTS: ProjectItem[] = [
     description: "High-impact social media campaign posters, typography lockups, and motion teaser storyboards for US launch.",
     description_de: "Wirkungsstarke Plakate für Social-Media-Kampagnen, Typografie-Konzepte und Teaser-Storyboards für den US-Marktstart.",
     category: "advertising",
-    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=60",
     tags: ["Photoshop", "Illustrator", "Art Direction", "Social Media"],
     clientLocation: "Germany",
     clientLocation_de: "Deutschland",
@@ -177,7 +177,7 @@ const DEFAULT_PROJECTS: ProjectItem[] = [
     description: "Intricate vintage-modern label illustration, custom gold foil embossed mockup, and typography for Parisian distillery.",
     description_de: "Detaillierte Vintage-Etiketten-Illustration, Heißfolienprägung-Mockups und Typografie für Pariser Premium-Destillerie.",
     category: "packaging",
-    image: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&q=80&w=1200",
+    image: "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=800&q=60",
     tags: ["Adobe Dimension", "Illustrator", "Packaging", "Luxury Branding"],
     clientLocation: "France",
     clientLocation_de: "Frankreich",
@@ -201,7 +201,7 @@ const DEFAULT_FEEDBACK: FeedbackItem[] = [
     rating: 5,
     message: "Kero transformed our complete brand identity with unbelievable precision and creativity. The 3D assets and visual language took our agency launch to the next level.",
     status: "approved",
-    avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80",
+    avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=128&q=60",
     created_at: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
   },
   {
@@ -213,7 +213,7 @@ const DEFAULT_FEEDBACK: FeedbackItem[] = [
     rating: 5,
     message: "Exceptional artistic sensitivity. Kero delivered complex visual campaigns in English and French ahead of deadline with impeccable attention to detail.",
     status: "approved",
-    avatar_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
+    avatar_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=128&q=60",
     created_at: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
   },
   {
@@ -225,7 +225,7 @@ const DEFAULT_FEEDBACK: FeedbackItem[] = [
     rating: 5,
     message: "Working with Kero was an absolute pleasure. His mastery of typography, 3D composition, and modern aesthetics is world-class.",
     status: "approved",
-    avatar_url: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=200&q=80",
+    avatar_url: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=128&q=60",
     created_at: new Date(Date.now() - 3600000 * 24 * 10).toISOString(),
   },
   {
@@ -237,7 +237,7 @@ const DEFAULT_FEEDBACK: FeedbackItem[] = [
     rating: 5,
     message: "The speed, precision, and sheer creativity Kero brings to the table is unmatched. Highly recommended for any serious design project.",
     status: "approved",
-    avatar_url: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80",
+    avatar_url: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=128&q=60",
     created_at: new Date(Date.now() - 3600000 * 24 * 14).toISOString(),
   },
 ];
@@ -361,78 +361,75 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     setUser(null);
   };
 
-  // Fetch all initial data
+  // Fetch all initial data — parallelized (was 4 sequential round-trips)
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     let hasAnyError = false;
     const deletedSet = getDeletedIds();
 
     try {
-      // 1. Fetch sections
-      const { data: sectionsData, error: sectionsError } = await supabase
-        .from("sections")
-        .select("*");
+      const [sectionsRes, feedbackRes, socialRes, projectsRes] = await Promise.all([
+        supabase.from("sections").select("key,value").limit(200),
+        supabase
+          .from("feedback")
+          .select("id,name,message,rating,status,avatar_url,role,company,country,created_at")
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase
+          .from("social_links")
+          .select("id,platform,url,created_at")
+          .order("created_at", { ascending: true })
+          .limit(20),
+        supabase
+          .from("projects")
+          .select("*")
+          .order("order_index", { ascending: true })
+          .limit(24),
+      ]);
 
-      if (sectionsError) {
+      if (sectionsRes.error) {
         hasAnyError = true;
-      } else if (sectionsData) {
+      } else if (sectionsRes.data) {
         const sectionsMap: Record<string, string> = {};
-        sectionsData.forEach((row: SectionItem) => {
+        (sectionsRes.data as SectionItem[]).forEach((row: SectionItem) => {
           if (row.key) sectionsMap[row.key] = row.value;
         });
         setSections(sectionsMap);
-        saveLocalData(LS_KEYS.SECTIONS, sectionsMap);
+        // Defer localStorage write off critical path
+        queueMicrotask(() => saveLocalData(LS_KEYS.SECTIONS, sectionsMap));
       }
 
-      // 2. Fetch feedback
-      const { data: feedbackData, error: feedbackError } = await supabase
-        .from("feedback")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (feedbackError) {
+      if (feedbackRes.error) {
         hasAnyError = true;
         setFeedback(loadLocalData(LS_KEYS.FEEDBACK, DEFAULT_FEEDBACK));
-      } else if (feedbackData !== null) {
-        const validFeedback = feedbackData.filter(
+      } else if (feedbackRes.data !== null) {
+        const validFeedback = (feedbackRes.data as FeedbackItem[]).filter(
           (f: FeedbackItem) => !deletedSet.has(String(f.id))
         );
-        setFeedback(validFeedback as FeedbackItem[]);
-        saveLocalData(LS_KEYS.FEEDBACK, validFeedback);
+        setFeedback(validFeedback);
+        queueMicrotask(() => saveLocalData(LS_KEYS.FEEDBACK, validFeedback));
       }
 
-      // 3. Fetch social links
-      const { data: socialData, error: socialError } = await supabase
-        .from("social_links")
-        .select("*")
-        .order("created_at", { ascending: true });
-
-      if (socialError) {
+      if (socialRes.error) {
         hasAnyError = true;
         setSocialLinks(loadLocalData(LS_KEYS.SOCIAL_LINKS, DEFAULT_SOCIAL_LINKS));
-      } else if (socialData !== null) {
-        const validSocial = socialData.filter(
+      } else if (socialRes.data !== null) {
+        const validSocial = (socialRes.data as SocialLinkItem[]).filter(
           (s: SocialLinkItem) => !deletedSet.has(String(s.id))
         );
-        setSocialLinks(validSocial as SocialLinkItem[]);
-        saveLocalData(LS_KEYS.SOCIAL_LINKS, validSocial);
+        setSocialLinks(validSocial);
+        queueMicrotask(() => saveLocalData(LS_KEYS.SOCIAL_LINKS, validSocial));
       }
 
-      // 4. Fetch projects
-      const { data: projectsData, error: projectsError } = await supabase
-        .from("projects")
-        .select("*")
-        .order("order_index", { ascending: true });
-
-      if (projectsError) {
+      if (projectsRes.error) {
         // Table might not exist yet -> use local storage or defaults
         setProjects(loadLocalData(LS_KEYS.PROJECTS, DEFAULT_PROJECTS));
-      } else if (projectsData !== null) {
-        const validProjects = projectsData.filter(
+      } else if (projectsRes.data !== null) {
+        const validProjects = (projectsRes.data as ProjectItem[]).filter(
           (p: ProjectItem) => !deletedSet.has(String(p.id))
         );
-        setProjects(validProjects as ProjectItem[]);
-        saveLocalData(LS_KEYS.PROJECTS, validProjects);
+        setProjects(validProjects);
+        queueMicrotask(() => saveLocalData(LS_KEYS.PROJECTS, validProjects));
       }
 
       if (hasAnyError) {
@@ -447,11 +444,30 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     }
   }, []);
 
-  // Setup Realtime Subscriptions
+  // Setup Realtime Subscriptions — deferred until idle so initial paint isn't blocked
   useEffect(() => {
     fetchData();
 
-    const channel = supabase
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
+    let idleId: number | undefined;
+    let timeoutId: number | undefined;
+
+    const subscribe = () => {
+      if (cancelled || channel) return;
+      // Don't open sockets in background tabs / prerender
+      if (typeof document !== "undefined" && document.hidden) {
+        const onVisible = () => {
+          if (!document.hidden) {
+            document.removeEventListener("visibilitychange", onVisible);
+            subscribe();
+          }
+        };
+        document.addEventListener("visibilitychange", onVisible);
+        return;
+      }
+
+      channel = supabase
       .channel("portfolio-realtime-channel")
       .on(
         "postgres_changes",
@@ -566,9 +582,22 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
           setIsRealtimeConnected(false);
         }
       });
+    };
+
+    // Defer socket work until browser is idle (fallback: 2.5s)
+    if (typeof (window as any).requestIdleCallback === "function") {
+      idleId = (window as any).requestIdleCallback(subscribe, { timeout: 2500 });
+    } else {
+      timeoutId = window.setTimeout(subscribe, 2000);
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (idleId && typeof (window as any).cancelIdleCallback === "function") {
+        (window as any).cancelIdleCallback(idleId);
+      }
+      if (timeoutId) window.clearTimeout(timeoutId);
+      if (channel) supabase.removeChannel(channel);
     };
   }, [fetchData]);
 
@@ -913,42 +942,65 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     }
   };
 
-  const approvedFeedback = feedback.filter((f) => f.status === "approved");
-  const pendingFeedback = feedback.filter((f) => f.status === "pending");
+  const approvedFeedback = useMemo(
+    () => feedback.filter((f) => f.status === "approved"),
+    [feedback]
+  );
+  const pendingFeedback = useMemo(
+    () => feedback.filter((f) => f.status === "pending"),
+    [feedback]
+  );
+
+  const value = useMemo(
+    () => ({
+      sections,
+      getSection,
+      feedback,
+      approvedFeedback,
+      pendingFeedback,
+      socialLinks,
+      projects,
+      isLoading,
+      isRealtimeConnected,
+      dbError,
+      user,
+      isAuthLoading,
+      signIn,
+      signOut,
+      submitFeedback,
+      updateFeedbackStatus,
+      deleteFeedback,
+      updateSection,
+      updateSectionsBulk,
+      uploadAsset,
+      updateSocialLink,
+      addSocialLink,
+      deleteSocialLink,
+      addProject,
+      updateProject,
+      deleteProject,
+      reorderProjects,
+      refreshData: fetchData,
+    }),
+    [
+      sections,
+      getSection,
+      feedback,
+      approvedFeedback,
+      pendingFeedback,
+      socialLinks,
+      projects,
+      isLoading,
+      isRealtimeConnected,
+      dbError,
+      user,
+      isAuthLoading,
+      fetchData,
+    ]
+  );
 
   return (
-    <PortfolioDataContext.Provider
-      value={{
-        sections,
-        getSection,
-        feedback,
-        approvedFeedback,
-        pendingFeedback,
-        socialLinks,
-        projects,
-        isLoading,
-        isRealtimeConnected,
-        dbError,
-        user,
-        isAuthLoading,
-        signIn,
-        signOut,
-        submitFeedback,
-        updateFeedbackStatus,
-        deleteFeedback,
-        updateSection,
-        updateSectionsBulk,
-        uploadAsset,
-        updateSocialLink,
-        addSocialLink,
-        deleteSocialLink,
-        addProject,
-        updateProject,
-        deleteProject,
-        reorderProjects,
-        refreshData: fetchData,
-      }}
-    >
+    <PortfolioDataContext.Provider value={value}>
       {children}
     </PortfolioDataContext.Provider>
   );

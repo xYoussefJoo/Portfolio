@@ -34,32 +34,55 @@ export function Navbar() {
     window.dispatchEvent(new CustomEvent("themeChanged", { detail: nextTheme }));
   };
 
-  // Handle scroll events
+  // Handle scroll events — rAF-throttled, cached offsets, passive listener
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
+    const sectionIds = ["home", "about", "skills", "projects", "experience", "testimonials", "contact"];
+    let ticking = false;
+    let cached: { id: string; top: number; height: number }[] = [];
 
-      const sections = ["home", "about", "skills", "projects", "experience", "testimonials", "contact"];
-      const scrollPosition = window.scrollY + 100;
+    const recache = () => {
+      cached = sectionIds
+        .map((id) => {
+          const el = document.getElementById(id);
+          if (!el) return null;
+          return { id, top: el.offsetTop, height: el.offsetHeight };
+        })
+        .filter(Boolean) as typeof cached;
+    };
+    recache();
+    // Re-cache on resize and after lazy sections mount
+    const onResize = () => recache();
+    window.addEventListener("resize", onResize);
+    const recacheTimer = window.setTimeout(recache, 1500);
+    const recacheTimer2 = window.setTimeout(recache, 4000);
 
-      for (const section of sections) {
-        const el = document.getElementById(section);
-        if (el) {
-          const top = el.offsetTop;
-          const height = el.offsetHeight;
-          if (scrollPosition >= top && scrollPosition < top + height) {
-            setActiveSection(section);
-          }
+    const update = () => {
+      ticking = false;
+      setScrolled(window.scrollY > 20);
+      const scrollPosition = window.scrollY + 120;
+      for (const s of cached) {
+        if (scrollPosition >= s.top && scrollPosition < s.top + s.height) {
+          setActiveSection((prev) => (prev === s.id ? prev : s.id));
+          break;
         }
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const handleScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    };
+
+    update();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", onResize);
+      window.clearTimeout(recacheTimer);
+      window.clearTimeout(recacheTimer2);
+    };
   }, []);
 
   const navLinks = [
@@ -107,6 +130,9 @@ export function Navbar() {
             <img
               src="/img/KesoLogo.jpeg"
               alt="Kero Amir Logo"
+              width={40}
+              height={40}
+              decoding="async"
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.currentTarget.style.display = "none";

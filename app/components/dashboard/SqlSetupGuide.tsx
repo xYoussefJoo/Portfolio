@@ -67,16 +67,31 @@ CREATE TABLE IF NOT EXISTS public.social_links (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 5. ROW LEVEL SECURITY (RLS) POLICIES - OPEN ACCESS
+-- 5. ROW LEVEL SECURITY (RLS) POLICIES
+-- Reads are public; writes require an authenticated admin session (except
+-- feedback INSERT, which stays public so visitors can submit testimonials).
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.sections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.social_links ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Public can manage projects" ON public.projects FOR ALL USING (true);
-CREATE POLICY "Public can manage sections" ON public.sections FOR ALL USING (true);
-CREATE POLICY "Public can manage feedback" ON public.feedback FOR ALL USING (true);
-CREATE POLICY "Public can manage social_links" ON public.social_links FOR ALL USING (true);
+CREATE POLICY "Public can view projects" ON public.projects FOR SELECT USING (true);
+CREATE POLICY "Authenticated can insert projects" ON public.projects FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated can update projects" ON public.projects FOR UPDATE USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated can delete projects" ON public.projects FOR DELETE USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Public can view sections" ON public.sections FOR SELECT USING (true);
+CREATE POLICY "Authenticated can insert sections" ON public.sections FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated can update sections" ON public.sections FOR UPDATE USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated can delete sections" ON public.sections FOR DELETE USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Public can view feedback" ON public.feedback FOR SELECT USING (true);
+CREATE POLICY "Public can submit feedback" ON public.feedback FOR INSERT WITH CHECK (true);
+CREATE POLICY "Authenticated can moderate feedback" ON public.feedback FOR UPDATE USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated can delete feedback" ON public.feedback FOR DELETE USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Public can view social_links" ON public.social_links FOR SELECT USING (true);
+CREATE POLICY "Authenticated can manage social_links" ON public.social_links FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 -- 6. REALTIME PUBLICATIONS
 DO $$
@@ -92,9 +107,9 @@ INSERT INTO storage.buckets (id, name, public) VALUES ('portfolio-assets', 'port
 ON CONFLICT (id) DO UPDATE SET public = true;
 
 CREATE POLICY "Public view assets" ON storage.objects FOR SELECT USING (bucket_id = 'portfolio-assets');
-CREATE POLICY "Public upload assets" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'portfolio-assets');
-CREATE POLICY "Public update assets" ON storage.objects FOR UPDATE USING (bucket_id = 'portfolio-assets');
-CREATE POLICY "Public delete assets" ON storage.objects FOR DELETE USING (bucket_id = 'portfolio-assets');
+CREATE POLICY "Authenticated upload assets" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'portfolio-assets' AND auth.role() = 'authenticated');
+CREATE POLICY "Authenticated update assets" ON storage.objects FOR UPDATE USING (bucket_id = 'portfolio-assets' AND auth.role() = 'authenticated');
+CREATE POLICY "Authenticated delete assets" ON storage.objects FOR DELETE USING (bucket_id = 'portfolio-assets' AND auth.role() = 'authenticated');
 
 -- 8. INITIAL SEED DATA (PROJECTS)
 INSERT INTO public.projects (title, title_de, description, description_de, category, image, tags, client_location, client_location_de, country_flag, year, accent_color, software, deliverables, deliverables_de, order_index) VALUES

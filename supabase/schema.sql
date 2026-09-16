@@ -55,7 +55,10 @@ CREATE TABLE IF NOT EXISTS public.social_links (
 );
 
 -- ==============================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES - OPEN ACCESS AS REQUESTED
+-- ROW LEVEL SECURITY (RLS) POLICIES
+-- Reads are public (portfolio showcase). Writes require an authenticated
+-- Supabase Auth session (the admin dashboard login), except feedback INSERT,
+-- which stays public so visitors can submit testimonials.
 -- ==============================================================================
 
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
@@ -63,33 +66,39 @@ ALTER TABLE public.sections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.social_links ENABLE ROW LEVEL SECURITY;
 
--- PROJECTS POLICIES (Open access for portfolio showcase and admin management)
+-- PROJECTS POLICIES (public read, admin-only writes)
 DROP POLICY IF EXISTS "Public can view projects" ON public.projects;
 CREATE POLICY "Public can view projects" ON public.projects FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Public can insert projects" ON public.projects;
-CREATE POLICY "Public can insert projects" ON public.projects FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Authenticated can insert projects" ON public.projects;
+CREATE POLICY "Authenticated can insert projects" ON public.projects FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 DROP POLICY IF EXISTS "Public can update projects" ON public.projects;
-CREATE POLICY "Public can update projects" ON public.projects FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Authenticated can update projects" ON public.projects;
+CREATE POLICY "Authenticated can update projects" ON public.projects FOR UPDATE USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 DROP POLICY IF EXISTS "Public can delete projects" ON public.projects;
-CREATE POLICY "Public can delete projects" ON public.projects FOR DELETE USING (true);
+DROP POLICY IF EXISTS "Authenticated can delete projects" ON public.projects;
+CREATE POLICY "Authenticated can delete projects" ON public.projects FOR DELETE USING (auth.role() = 'authenticated');
 
--- SECTIONS POLICIES
+-- SECTIONS POLICIES (public read, admin-only writes)
 DROP POLICY IF EXISTS "Public can view sections" ON public.sections;
 CREATE POLICY "Public can view sections" ON public.sections FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Public can insert sections" ON public.sections;
-CREATE POLICY "Public can insert sections" ON public.sections FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Authenticated can insert sections" ON public.sections;
+CREATE POLICY "Authenticated can insert sections" ON public.sections FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 DROP POLICY IF EXISTS "Public can update sections" ON public.sections;
-CREATE POLICY "Public can update sections" ON public.sections FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Authenticated can update sections" ON public.sections;
+CREATE POLICY "Authenticated can update sections" ON public.sections FOR UPDATE USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 DROP POLICY IF EXISTS "Public can delete sections" ON public.sections;
-CREATE POLICY "Public can delete sections" ON public.sections FOR DELETE USING (true);
+DROP POLICY IF EXISTS "Authenticated can delete sections" ON public.sections;
+CREATE POLICY "Authenticated can delete sections" ON public.sections FOR DELETE USING (auth.role() = 'authenticated');
 
--- FEEDBACK POLICIES
+-- FEEDBACK POLICIES (public read + public submit, admin-only moderation)
 DROP POLICY IF EXISTS "Public can view feedback" ON public.feedback;
 CREATE POLICY "Public can view feedback" ON public.feedback FOR SELECT USING (true);
 
@@ -97,17 +106,20 @@ DROP POLICY IF EXISTS "Public can submit feedback" ON public.feedback;
 CREATE POLICY "Public can submit feedback" ON public.feedback FOR INSERT WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Public can moderate feedback" ON public.feedback;
-CREATE POLICY "Public can moderate feedback" ON public.feedback FOR UPDATE USING (true);
+DROP POLICY IF EXISTS "Authenticated can moderate feedback" ON public.feedback;
+CREATE POLICY "Authenticated can moderate feedback" ON public.feedback FOR UPDATE USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 DROP POLICY IF EXISTS "Public can delete feedback" ON public.feedback;
-CREATE POLICY "Public can delete feedback" ON public.feedback FOR DELETE USING (true);
+DROP POLICY IF EXISTS "Authenticated can delete feedback" ON public.feedback;
+CREATE POLICY "Authenticated can delete feedback" ON public.feedback FOR DELETE USING (auth.role() = 'authenticated');
 
--- SOCIAL LINKS POLICIES
+-- SOCIAL LINKS POLICIES (public read, admin-only writes)
 DROP POLICY IF EXISTS "Public can view social_links" ON public.social_links;
 CREATE POLICY "Public can view social_links" ON public.social_links FOR SELECT USING (true);
 
 DROP POLICY IF EXISTS "Public can manage social_links" ON public.social_links;
-CREATE POLICY "Public can manage social_links" ON public.social_links FOR ALL USING (true);
+DROP POLICY IF EXISTS "Authenticated can manage social_links" ON public.social_links;
+CREATE POLICY "Authenticated can manage social_links" ON public.social_links FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 -- ==============================================================================
 -- PERFORMANCE INDEXES (speed up portfolio reads, avoid sequential scans)
@@ -157,16 +169,19 @@ CREATE POLICY "Public can view portfolio assets" ON storage.objects
 FOR SELECT USING (bucket_id = 'portfolio-assets');
 
 DROP POLICY IF EXISTS "Public can upload portfolio assets" ON storage.objects;
-CREATE POLICY "Public can upload portfolio assets" ON storage.objects
-FOR INSERT WITH CHECK (bucket_id = 'portfolio-assets');
+DROP POLICY IF EXISTS "Authenticated can upload portfolio assets" ON storage.objects;
+CREATE POLICY "Authenticated can upload portfolio assets" ON storage.objects
+FOR INSERT WITH CHECK (bucket_id = 'portfolio-assets' AND auth.role() = 'authenticated');
 
 DROP POLICY IF EXISTS "Public can update portfolio assets" ON storage.objects;
-CREATE POLICY "Public can update portfolio assets" ON storage.objects
-FOR UPDATE USING (bucket_id = 'portfolio-assets');
+DROP POLICY IF EXISTS "Authenticated can update portfolio assets" ON storage.objects;
+CREATE POLICY "Authenticated can update portfolio assets" ON storage.objects
+FOR UPDATE USING (bucket_id = 'portfolio-assets' AND auth.role() = 'authenticated');
 
 DROP POLICY IF EXISTS "Public can delete portfolio assets" ON storage.objects;
-CREATE POLICY "Public can delete portfolio assets" ON storage.objects
-FOR DELETE USING (bucket_id = 'portfolio-assets');
+DROP POLICY IF EXISTS "Authenticated can delete portfolio assets" ON storage.objects;
+CREATE POLICY "Authenticated can delete portfolio assets" ON storage.objects
+FOR DELETE USING (bucket_id = 'portfolio-assets' AND auth.role() = 'authenticated');
 
 -- ==============================================================================
 -- SEED DATA (INITIAL DEFAULT PROJECTS, SECTIONS, FEEDBACK)

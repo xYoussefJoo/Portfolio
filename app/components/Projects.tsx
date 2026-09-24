@@ -37,6 +37,19 @@ export function Projects() {
   const [viewMode, setViewMode] = useState<"stack" | "grid">("stack");
   const [previewProject, setPreviewProject] = useState<ProjectItem | null>(null);
 
+  // The 3D Stack is a PC-only view (wide screen + mouse); phones and tablets always
+  // get the Grid. Starts as `true` to match the server render — this section is
+  // lazy and below the fold, so touch devices switch to Grid before it's seen.
+  const [isDesktop, setIsDesktop] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px) and (hover: hover) and (pointer: fine)");
+    setIsDesktop(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  const activeView = isDesktop ? viewMode : "grid";
+
   const { t, language } = useLanguage();
   const { projects } = usePortfolioData();
 
@@ -92,7 +105,7 @@ export function Projects() {
       : null;
     if (section && viewObs) viewObs.observe(section);
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!inView) return;
+      if (!inView || activeView !== "stack") return;
       if (e.key === "ArrowRight") handleNext();
       if (e.key === "ArrowLeft") handlePrev();
     };
@@ -101,7 +114,7 @@ export function Projects() {
       window.removeEventListener("keydown", handleKeyDown);
       viewObs?.disconnect();
     };
-  }, [handleNext, handlePrev]);
+  }, [handleNext, handlePrev, activeView]);
 
   return (
     <section
@@ -151,8 +164,8 @@ export function Projects() {
               ))}
             </div>
 
-            {/* View Mode Toggle (3D Stack vs Grid) */}
-            <div className="flex items-center gap-1 bg-[var(--card-bg)] backdrop-blur-md p-1.5 rounded-2xl border border-[var(--card-border)] shadow-sm">
+            {/* View Mode Toggle (3D Stack vs Grid) — PC only; phones/tablets always use Grid */}
+            <div className={`${isDesktop ? "hidden lg:flex" : "hidden"} items-center gap-1 bg-[var(--card-bg)] backdrop-blur-md p-1.5 rounded-2xl border border-[var(--card-border)] shadow-sm`}>
               <button
                 onClick={() => setViewMode("stack")}
                 className={`p-2 rounded-xl transition-all duration-300 cursor-pointer flex items-center gap-1.5 text-xs font-bold ${
@@ -184,7 +197,7 @@ export function Projects() {
         {/* ------------------------------------------------------------------ */}
         {/* VIEW 1: 3D Swipeable Stacked Card Deck (Enhanced Tilt Physics)     */}
         {/* ------------------------------------------------------------------ */}
-        {viewMode === "stack" ? (
+        {activeView === "stack" ? (
           <div className="flex flex-col items-center justify-center space-y-10 py-6">
             {/* Gesture Helper Banner */}
             <div className="flex items-center gap-2.5 px-4 py-2 rounded-full bg-[var(--pill-bg)] border border-[var(--pill-border)] text-xs text-[var(--text-secondary)] font-mono shadow-sm">

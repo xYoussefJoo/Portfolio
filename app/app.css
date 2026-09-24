@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Theme variants follow the site's own toggle (the .dark / .light class on <html>).
+   Without these, Tailwind v4 has no `light:` variant at all (those classes were never
+   generated) and `dark:` followed the OS setting instead of the site toggle. */
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant light (&:where(.light, .light *));
+
 @theme {
   --color-brand-bg: #050816;
   --color-brand-purple: #8A60F1;
@@ -37,28 +43,28 @@ html.dark {
   --shadow-color: rgba(0, 0, 0, 0.4);
 }
 
-/* Light Mode (Optimized Color System) */
+/* Light Mode — soft off-whites instead of pure #fff (less glare, easier on the eyes) */
 html.light {
-  --bg-primary: #f8fafc;
-  --bg-secondary: #f1f5f9;
+  --bg-primary: #e7e9ee;
+  --bg-secondary: #dfe2e8;
   --text-primary: #0f172a;
   --text-secondary: #334155;
   --text-muted: #64748b;
-  --card-bg: rgba(255, 255, 255, 0.88);
-  --card-solid-bg: #ffffff;
-  --card-solid-body: #f8fafc;
+  --card-bg: rgba(240, 241, 244, 0.9);
+  --card-solid-bg: #f0f1f4;
+  --card-solid-body: #e9ebef;
   --card-border: rgba(138, 96, 241, 0.22);
-  --card-hover-bg: rgba(255, 255, 255, 0.98);
+  --card-hover-bg: rgba(243, 244, 247, 0.98);
   --card-hover-border: rgba(138, 96, 241, 0.55);
-  --nav-bg: rgba(255, 255, 255, 0.85);
+  --nav-bg: rgba(231, 233, 238, 0.85);
   --nav-border: rgba(138, 96, 241, 0.2);
   --grid-line: rgba(138, 96, 241, 0.08);
-  --input-bg: #ffffff;
+  --input-bg: #f0f1f4;
   --input-border: rgba(203, 213, 225, 0.9);
   --pill-bg: rgba(138, 96, 241, 0.06);
   --pill-border: rgba(138, 96, 241, 0.18);
   --pill-hover-bg: rgba(138, 96, 241, 0.14);
-  --scrollbar-bg: #f1f5f9;
+  --scrollbar-bg: #dfe2e8;
   --scrollbar-thumb: rgba(138, 96, 241, 0.35);
   --shadow-color: rgba(138, 96, 241, 0.08);
 }
@@ -180,6 +186,38 @@ body {
   background-size: 100% 100%, 40px 40px, 40px 40px;
 }
 
+/* Hero entrance — pure CSS so it runs at first paint, before hydration.
+   .hero-rise only moves (never hides) the LCP text; .hero-fade-rise also fades
+   the small decorative rows. `backwards` (not `both`) so no transform lingers after
+   the animation — a lingering transform would trap position:fixed children. */
+@keyframes hero-rise {
+  from {
+    transform: translateY(20px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-rise {
+  animation: hero-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.hero-fade-rise {
+  animation: hero-fade-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
 /* Infinite Marquee Comment Banner */
 @keyframes marquee-left {
   0% {
@@ -234,7 +272,9 @@ section[id] {
   .animate-marquee-left,
   .animate-marquee-right,
   .animate-float,
-  .animate-pulse-glow {
+  .animate-pulse-glow,
+  .hero-rise,
+  .hero-fade-rise {
     animation: none !important;
   }
   html, body {

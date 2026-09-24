@@ -109,11 +109,10 @@ export function Navbar() {
   };
 
   return (
-    <motion.nav
-      initial={{ y: -50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-6 md:px-12 py-4 ${
+    // CSS entrance (runs before hydration) instead of framer-motion initial={{ opacity: 0 }},
+    // which kept the whole navbar invisible in the server HTML until JS loaded
+    <nav
+      className={`hero-fade-rise fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-6 md:px-12 py-4 ${
         scrolled
           ? "bg-[var(--nav-bg)] backdrop-blur-md border-b border-[var(--nav-border)] shadow-lg py-3 shadow-[0_4px_30px_rgba(138,96,241,0.08)]"
           : "bg-transparent py-5"
@@ -128,7 +127,7 @@ export function Navbar() {
         >
           <div className="relative w-10 h-10 rounded-xl overflow-hidden border border-[#8A60F1]/40 shadow-[0_0_15px_rgba(138,96,241,0.4)] group-hover:scale-105 group-hover:border-[#8A60F1] transition-all duration-300 bg-[#050816] flex items-center justify-center">
             <img
-              src="/img/KesoLogo.jpeg"
+              src="/img/KesoLogo-96.jpeg"
               alt="Kero Amir Logo"
               width={40}
               height={40}
@@ -278,6 +277,6 @@ export function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.nav>
+    </nav>
   );
 }

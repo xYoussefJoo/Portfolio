@@ -85,7 +85,7 @@ CREATE POLICY "Authenticated can insert sections" ON public.sections FOR INSERT 
 CREATE POLICY "Authenticated can update sections" ON public.sections FOR UPDATE USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated can delete sections" ON public.sections FOR DELETE USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Public can view feedback" ON public.feedback FOR SELECT USING (true);
+CREATE POLICY "Public can view feedback" ON public.feedback FOR SELECT USING (status = 'approved' OR auth.role() = 'authenticated');
 CREATE POLICY "Public can submit feedback" ON public.feedback FOR INSERT WITH CHECK (true);
 CREATE POLICY "Authenticated can moderate feedback" ON public.feedback FOR UPDATE USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Authenticated can delete feedback" ON public.feedback FOR DELETE USING (auth.role() = 'authenticated');

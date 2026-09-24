@@ -67,6 +67,32 @@ function saveLocalData<T>(key: string, data: T) {
   }
 }
 
+// Downscale uploads before they reach Storage: a 4000px camera photo shown in a
+// 640px card costs megabytes to download and a slow decode on every render.
+async function downscaleImage(file: File, maxDim = 1600): Promise<File> {
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) return file; // keep SVG/GIF as-is
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+    if (scale === 1 && file.size < 500_000) {
+      bmp.close();
+      return file;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bmp.width * scale);
+    canvas.height = Math.round(bmp.height * scale);
+    canvas.getContext("2d")!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    bmp.close();
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/webp", 0.85)
+    );
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, "") + ".webp", { type: "image/webp" });
+  } catch {
+    return file;
+  }
+}
+
 // ----------------------------------------------------------------------------
 // Default initial seed data (filtered by deleted IDs)
 // ----------------------------------------------------------------------------
@@ -191,56 +217,9 @@ const DEFAULT_PROJECTS: ProjectItem[] = [
   },
 ];
 
-const DEFAULT_FEEDBACK: FeedbackItem[] = [
-  {
-    id: "default-1",
-    name: "Marcus Vance",
-    role: "Creative Director",
-    company: "Vance Studio NYC",
-    country: "United States",
-    rating: 5,
-    message: "Kero transformed our complete brand identity with unbelievable precision and creativity. The 3D assets and visual language took our agency launch to the next level.",
-    status: "approved",
-    avatar_url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=128&q=60",
-    created_at: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
-  },
-  {
-    id: "default-2",
-    name: "Sophie Dubois",
-    role: "Brand Marketing Head",
-    company: "Lumière Paris",
-    country: "France",
-    rating: 5,
-    message: "Exceptional artistic sensitivity. Kero delivered complex visual campaigns in English and French ahead of deadline with impeccable attention to detail.",
-    status: "approved",
-    avatar_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=128&q=60",
-    created_at: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
-  },
-  {
-    id: "default-3",
-    name: "Alexander Meyer",
-    role: "Founder & CEO",
-    company: "Klang Audio Berlin",
-    country: "Germany",
-    rating: 5,
-    message: "Working with Kero was an absolute pleasure. His mastery of typography, 3D composition, and modern aesthetics is world-class.",
-    status: "approved",
-    avatar_url: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=128&q=60",
-    created_at: new Date(Date.now() - 3600000 * 24 * 10).toISOString(),
-  },
-  {
-    id: "default-4",
-    name: "Elena Rostova",
-    role: "VP of Design",
-    company: "Aura Labs Zurich",
-    country: "Switzerland",
-    rating: 5,
-    message: "The speed, precision, and sheer creativity Kero brings to the table is unmatched. Highly recommended for any serious design project.",
-    status: "approved",
-    avatar_url: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=128&q=60",
-    created_at: new Date(Date.now() - 3600000 * 24 * 14).toISOString(),
-  },
-];
+// No invented testimonials: until real approved feedback exists, the ticker shows
+// clearly labeled placeholder examples (see FeedbackCardDeck.tsx).
+const DEFAULT_FEEDBACK: FeedbackItem[] = [];
 
 const DEFAULT_SOCIAL_LINKS: SocialLinkItem[] = [
   { id: "s-1", platform: "behance", url: "https://behance.net" },
@@ -299,17 +278,25 @@ interface PortfolioDataContextType {
 const PortfolioDataContext = createContext<PortfolioDataContextType | undefined>(undefined);
 
 export function PortfolioDataProvider({ children }: { children: React.ReactNode }) {
-  // Initialize state with persistent localStorage cache
+  // Initial state must match the server render (the server has no localStorage);
+  // reading localStorage here caused a hydration mismatch, making React discard the
+  // SSR HTML and re-render the page. The localStorage cache is applied after mount.
   const [sections, setSections] = useState<Record<string, string>>({});
-  const [feedback, setFeedback] = useState<FeedbackItem[]>(() =>
-    loadLocalData(LS_KEYS.FEEDBACK, DEFAULT_FEEDBACK)
-  );
-  const [socialLinks, setSocialLinks] = useState<SocialLinkItem[]>(() =>
-    loadLocalData(LS_KEYS.SOCIAL_LINKS, DEFAULT_SOCIAL_LINKS)
-  );
-  const [projects, setProjects] = useState<ProjectItem[]>(() =>
-    loadLocalData(LS_KEYS.PROJECTS, DEFAULT_PROJECTS)
-  );
+  const [feedback, setFeedback] = useState<FeedbackItem[]>(DEFAULT_FEEDBACK);
+  const [socialLinks, setSocialLinks] = useState<SocialLinkItem[]>(DEFAULT_SOCIAL_LINKS);
+  const [projects, setProjects] = useState<ProjectItem[]>(DEFAULT_PROJECTS);
+
+  useEffect(() => {
+    // Drop the old invented seed testimonials ("default-1".."default-4") that earlier
+    // versions cached in visitors' localStorage
+    setFeedback(
+      loadLocalData(LS_KEYS.FEEDBACK, DEFAULT_FEEDBACK).filter(
+        (f) => !String(f.id).startsWith("default-")
+      )
+    );
+    setSocialLinks(loadLocalData(LS_KEYS.SOCIAL_LINKS, DEFAULT_SOCIAL_LINKS));
+    setProjects(loadLocalData(LS_KEYS.PROJECTS, DEFAULT_PROJECTS));
+  }, []);
 
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRealtimeConnected, setIsRealtimeConnected] = useState<boolean>(false);
@@ -368,13 +355,23 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     const deletedSet = getDeletedIds();
 
     try {
+      // Visitors only ever see approved feedback — filter in the DB instead of downloading
+      // pending submissions (other people's unmoderated messages) to every browser.
+      // getSession() reads the locally stored session, no network round-trip.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      let feedbackQuery = supabase
+        .from("feedback")
+        .select("id,name,message,rating,status,avatar_url,role,company,country,created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (!session) feedbackQuery = feedbackQuery.eq("status", "approved");
+
       const [sectionsRes, feedbackRes, socialRes, projectsRes] = await Promise.all([
         supabase.from("sections").select("key,value").limit(200),
-        supabase
-          .from("feedback")
-          .select("id,name,message,rating,status,avatar_url,role,company,country,created_at")
-          .order("created_at", { ascending: false })
-          .limit(50),
+        feedbackQuery,
         supabase
           .from("social_links")
           .select("id,platform,url,created_at")
@@ -444,9 +441,18 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     }
   }, []);
 
-  // Setup Realtime Subscriptions — deferred until idle so initial paint isn't blocked
+  // Fetch once auth is known, and again on login/logout (the admin also sees pending feedback)
+  const userId = user?.id;
   useEffect(() => {
+    if (isAuthLoading) return;
     fetchData();
+  }, [isAuthLoading, userId, fetchData]);
+
+  // Setup Realtime Subscriptions — only for the logged-in admin (dashboard live updates).
+  // Public visitors don't need a WebSocket each; they get fresh data on page load.
+  // Deferred until idle so initial paint isn't blocked.
+  useEffect(() => {
+    if (!userId) return;
 
     let channel: ReturnType<typeof supabase.channel> | null = null;
     let cancelled = false;
@@ -598,8 +604,9 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
       }
       if (timeoutId) window.clearTimeout(timeoutId);
       if (channel) supabase.removeChannel(channel);
+      setIsRealtimeConnected(false);
     };
-  }, [fetchData]);
+  }, [userId]);
 
   // Section retrieval with multi-language fallback support
   const getSection = useCallback(
@@ -638,25 +645,17 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
         status: "pending" as const,
       };
 
-      const { data: inserted, error } = await supabase
-        .from("feedback")
-        .insert([newFeedback])
-        .select()
-        .single();
+      // The id is generated client-side and the row is not read back: visitors may not
+      // SELECT pending feedback (RLS), so `.select()` after insert would be denied
+      const id = crypto.randomUUID();
+      const { error } = await supabase.from("feedback").insert([{ id, ...newFeedback }]);
 
-      if (error || !inserted) {
-        const localItem: FeedbackItem = {
-          id: `local-${Date.now()}`,
-          ...newFeedback,
-          created_at: new Date().toISOString(),
-        };
-        const next = [localItem, ...feedback];
-        setFeedback(next);
-        saveLocalData(LS_KEYS.FEEDBACK, next);
-        return { success: true };
-      }
-
-      const next = [inserted as FeedbackItem, ...feedback];
+      const localItem: FeedbackItem = {
+        id: error ? `local-${Date.now()}` : id,
+        ...newFeedback,
+        created_at: new Date().toISOString(),
+      };
+      const next = [localItem, ...feedback];
       setFeedback(next);
       saveLocalData(LS_KEYS.FEEDBACK, next);
       return { success: true };
@@ -665,85 +664,77 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
     }
   };
 
+  // --------------------------------------------------------------------------
+  // Mutations. Rows with a UUID id live in Supabase; any other id (seed data or the
+  // local-only fallback used before the SQL setup) exists only in this browser.
+  // Rules: never match DB rows by name/title (could hit the wrong row), and if the
+  // DB write fails, roll the optimistic UI change back and report the real error.
+  // --------------------------------------------------------------------------
   const updateFeedbackStatus = async (id: string, status: "pending" | "approved") => {
-    try {
-      const next = feedback.map((f) => (String(f.id) === String(id) ? { ...f, status } : f));
-      setFeedback(next);
-      saveLocalData(LS_KEYS.FEEDBACK, next);
+    const prev = feedback;
+    const next = feedback.map((f) => (String(f.id) === String(id) ? { ...f, status } : f));
+    setFeedback(next);
+    saveLocalData(LS_KEYS.FEEDBACK, next);
 
-      if (isUUID(id)) {
-        await supabase.from("feedback").update({ status }).eq("id", id);
+    if (isUUID(id)) {
+      const { error } = await supabase.from("feedback").update({ status }).eq("id", id);
+      if (error) {
+        setFeedback(prev);
+        saveLocalData(LS_KEYS.FEEDBACK, prev);
+        return { success: false, error: error.message };
       }
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || "Failed to update feedback status" };
     }
+    return { success: true };
   };
 
   const deleteFeedback = async (id: string) => {
-    try {
-      // 1. Mark as deleted permanently in local tracking
-      markIdAsDeleted(id);
+    const prev = feedback;
+    const next = feedback.filter((f) => String(f.id) !== String(id));
+    setFeedback(next);
+    saveLocalData(LS_KEYS.FEEDBACK, next);
 
-      // 2. Remove from state and save to localStorage immediately
-      const next = feedback.filter((f) => String(f.id) !== String(id));
-      setFeedback(next);
-      saveLocalData(LS_KEYS.FEEDBACK, next);
-
-      // 3. Delete from Supabase if valid UUID, or delete by matching name
-      const target = feedback.find((f) => String(f.id) === String(id));
-      if (isUUID(id)) {
-        await supabase.from("feedback").delete().eq("id", id);
-      } else if (target) {
-        await supabase.from("feedback").delete().eq("name", target.name);
+    if (isUUID(id)) {
+      const { error } = await supabase.from("feedback").delete().eq("id", id);
+      if (error) {
+        setFeedback(prev);
+        saveLocalData(LS_KEYS.FEEDBACK, prev);
+        return { success: false, error: error.message };
       }
-
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || "Failed to delete feedback" };
+    } else {
+      // Local-only row: remember the deletion so seed data doesn't reappear
+      markIdAsDeleted(id);
     }
-  };
-
-  const updateSection = async (key: string, value: string) => {
-    try {
-      const next = { ...sections, [key]: value };
-      setSections(next);
-      saveLocalData(LS_KEYS.SECTIONS, next);
-
-      await supabase
-        .from("sections")
-        .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
-
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || "Failed to save section" };
-    }
+    return { success: true };
   };
 
   const updateSectionsBulk = async (entries: { key: string; value: string }[]) => {
-    try {
-      const newMap = { ...sections };
-      entries.forEach((e) => {
-        newMap[e.key] = e.value;
-      });
-      setSections(newMap);
-      saveLocalData(LS_KEYS.SECTIONS, newMap);
+    const prev = sections;
+    const newMap = { ...sections };
+    entries.forEach((e) => {
+      newMap[e.key] = e.value;
+    });
+    setSections(newMap);
+    saveLocalData(LS_KEYS.SECTIONS, newMap);
 
-      const records = entries.map((e) => ({
-        key: e.key,
-        value: e.value,
-        updated_at: new Date().toISOString(),
-      }));
+    const records = entries.map((e) => ({
+      key: e.key,
+      value: e.value,
+      updated_at: new Date().toISOString(),
+    }));
 
-      await supabase.from("sections").upsert(records, { onConflict: "key" });
-
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || "Failed to save sections in bulk" };
+    const { error } = await supabase.from("sections").upsert(records, { onConflict: "key" });
+    if (error) {
+      setSections(prev);
+      saveLocalData(LS_KEYS.SECTIONS, prev);
+      return { success: false, error: error.message };
     }
+    return { success: true };
   };
 
-  const uploadAsset = async (file: File, folder = "uploads") => {
+  const updateSection = (key: string, value: string) => updateSectionsBulk([{ key, value }]);
+
+  const uploadAsset = async (originalFile: File, folder = "uploads") => {
+    const file = await downscaleImage(originalFile);
     try {
       const fileExt = file.name.split(".").pop();
       const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
@@ -751,7 +742,8 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
       const { error: uploadError } = await supabase.storage
         .from("portfolio-assets")
         .upload(fileName, file, {
-          cacheControl: "3600",
+          // File names are unique (timestamp + random), so they can be cached for a year
+          cacheControl: "31536000",
           upsert: true,
         });
 
@@ -775,171 +767,133 @@ export function PortfolioDataProvider({ children }: { children: React.ReactNode 
   };
 
   const updateSocialLink = async (id: string, platform: string, url: string) => {
-    try {
-      const next = socialLinks.map((s) => (String(s.id) === String(id) ? { ...s, platform, url } : s));
-      setSocialLinks(next);
-      saveLocalData(LS_KEYS.SOCIAL_LINKS, next);
+    const prev = socialLinks;
+    const next = socialLinks.map((s) => (String(s.id) === String(id) ? { ...s, platform, url } : s));
+    setSocialLinks(next);
+    saveLocalData(LS_KEYS.SOCIAL_LINKS, next);
 
-      if (isUUID(id)) {
-        await supabase.from("social_links").update({ platform, url }).eq("id", id);
+    if (isUUID(id)) {
+      const { error } = await supabase.from("social_links").update({ platform, url }).eq("id", id);
+      if (error) {
+        setSocialLinks(prev);
+        saveLocalData(LS_KEYS.SOCIAL_LINKS, prev);
+        return { success: false, error: error.message };
       }
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || "Failed to update social link" };
     }
+    return { success: true };
   };
 
   const addSocialLink = async (platform: string, url: string) => {
-    try {
-      const newObj = { platform, url };
-      const { data, error } = await supabase
-        .from("social_links")
-        .insert([newObj])
-        .select()
-        .single();
+    const { data, error } = await supabase
+      .from("social_links")
+      .insert([{ platform, url }])
+      .select()
+      .single();
 
-      if (error || !data) {
-        const localObj: SocialLinkItem = {
-          id: `local-social-${Date.now()}`,
-          platform,
-          url,
-        };
-        const next = [...socialLinks, localObj];
-        setSocialLinks(next);
-        saveLocalData(LS_KEYS.SOCIAL_LINKS, next);
-        return { success: true };
-      }
-
-      const next = [...socialLinks, data as SocialLinkItem];
-      setSocialLinks(next);
-      saveLocalData(LS_KEYS.SOCIAL_LINKS, next);
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || "Failed to add social link" };
-    }
+    // DB unavailable (e.g. SQL setup pending) → keep it locally, but say so
+    const item: SocialLinkItem =
+      error || !data ? { id: `local-social-${Date.now()}`, platform, url } : (data as SocialLinkItem);
+    const next = [...socialLinks, item];
+    setSocialLinks(next);
+    saveLocalData(LS_KEYS.SOCIAL_LINKS, next);
+    return error
+      ? { success: true, error: `Saved in this browser only: ${error.message}` }
+      : { success: true };
   };
 
   const deleteSocialLink = async (id: string) => {
-    try {
-      markIdAsDeleted(id);
-      const next = socialLinks.filter((s) => String(s.id) !== String(id));
-      setSocialLinks(next);
-      saveLocalData(LS_KEYS.SOCIAL_LINKS, next);
+    const prev = socialLinks;
+    const next = socialLinks.filter((s) => String(s.id) !== String(id));
+    setSocialLinks(next);
+    saveLocalData(LS_KEYS.SOCIAL_LINKS, next);
 
-      const target = socialLinks.find((s) => String(s.id) === String(id));
-      if (isUUID(id)) {
-        await supabase.from("social_links").delete().eq("id", id);
-      } else if (target) {
-        await supabase.from("social_links").delete().eq("platform", target.platform);
+    if (isUUID(id)) {
+      const { error } = await supabase.from("social_links").delete().eq("id", id);
+      if (error) {
+        setSocialLinks(prev);
+        saveLocalData(LS_KEYS.SOCIAL_LINKS, prev);
+        return { success: false, error: error.message };
       }
-
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || "Failed to delete social link" };
+    } else {
+      markIdAsDeleted(id);
     }
+    return { success: true };
   };
 
   // Projects CRUD
   const addProject = async (projectData: Omit<ProjectItem, "id">) => {
-    try {
-      const order_index = projects.length + 1;
-      const payload = {
-        ...projectData,
-        order_index: projectData.order_index ?? order_index,
-      };
+    const payload = {
+      ...projectData,
+      order_index: projectData.order_index ?? projects.length + 1,
+    };
 
-      const { data, error } = await supabase
-        .from("projects")
-        .insert([payload])
-        .select()
-        .single();
+    const { data, error } = await supabase.from("projects").insert([payload]).select().single();
 
-      if (error || !data) {
-        const localProject: ProjectItem = {
-          id: `local-proj-${Date.now()}`,
-          ...payload,
-        };
-        const next = [...projects, localProject];
-        setProjects(next);
-        saveLocalData(LS_KEYS.PROJECTS, next);
-        return { success: true };
-      }
-
-      const next = [...projects, data as ProjectItem];
-      setProjects(next);
-      saveLocalData(LS_KEYS.PROJECTS, next);
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || "Failed to add project" };
-    }
+    const item: ProjectItem =
+      error || !data ? { id: `local-proj-${Date.now()}`, ...payload } : (data as ProjectItem);
+    const next = [...projects, item];
+    setProjects(next);
+    saveLocalData(LS_KEYS.PROJECTS, next);
+    return error
+      ? { success: true, error: `Saved in this browser only: ${error.message}` }
+      : { success: true };
   };
 
   const updateProject = async (id: string | number, projectData: Partial<ProjectItem>) => {
-    try {
-      const next = projects.map((p) =>
-        String(p.id) === String(id) ? { ...p, ...projectData } : p
-      );
-      setProjects(next);
-      saveLocalData(LS_KEYS.PROJECTS, next);
+    const prev = projects;
+    const next = projects.map((p) => (String(p.id) === String(id) ? { ...p, ...projectData } : p));
+    setProjects(next);
+    saveLocalData(LS_KEYS.PROJECTS, next);
 
-      if (isUUID(id)) {
-        await supabase.from("projects").update(projectData).eq("id", id);
-      } else {
-        const target = projects.find((p) => String(p.id) === String(id));
-        if (target) {
-          await supabase.from("projects").update(projectData).eq("title", target.title);
-        }
+    if (isUUID(id)) {
+      const { error } = await supabase.from("projects").update(projectData).eq("id", id);
+      if (error) {
+        setProjects(prev);
+        saveLocalData(LS_KEYS.PROJECTS, prev);
+        return { success: false, error: error.message };
       }
-
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || "Failed to update project" };
     }
+    return { success: true };
   };
 
   const deleteProject = async (id: string | number) => {
-    try {
-      // 1. Mark permanently deleted in local cache
-      markIdAsDeleted(id);
+    const prev = projects;
+    const next = projects.filter((p) => String(p.id) !== String(id));
+    setProjects(next);
+    saveLocalData(LS_KEYS.PROJECTS, next);
 
-      // 2. Remove immediately from React state and localStorage
-      const next = projects.filter((p) => String(p.id) !== String(id));
-      setProjects(next);
-      saveLocalData(LS_KEYS.PROJECTS, next);
-
-      // 3. Remove from Supabase DB
-      const target = projects.find((p) => String(p.id) === String(id));
-      if (isUUID(id)) {
-        await supabase.from("projects").delete().eq("id", id);
-      } else if (target) {
-        await supabase.from("projects").delete().eq("title", target.title);
+    if (isUUID(id)) {
+      const { error } = await supabase.from("projects").delete().eq("id", id);
+      if (error) {
+        setProjects(prev);
+        saveLocalData(LS_KEYS.PROJECTS, prev);
+        return { success: false, error: error.message };
       }
-
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || "Failed to delete project" };
+    } else {
+      markIdAsDeleted(id);
     }
+    return { success: true };
   };
 
   const reorderProjects = async (newProjects: ProjectItem[]) => {
-    try {
-      setProjects(newProjects);
-      saveLocalData(LS_KEYS.PROJECTS, newProjects);
+    const prev = projects;
+    setProjects(newProjects);
+    saveLocalData(LS_KEYS.PROJECTS, newProjects);
 
-      const updates = newProjects.map((p, idx) => ({
-        id: p.id,
-        order_index: idx + 1,
-      }));
-
-      for (const u of updates) {
-        if (isUUID(u.id)) {
-          await supabase.from("projects").update({ order_index: u.order_index }).eq("id", u.id);
-        }
-      }
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || "Failed to reorder projects" };
+    // Parallel instead of one awaited round-trip per project
+    const results = await Promise.all(
+      newProjects
+        .map((p, idx) => ({ id: p.id, order_index: idx + 1 }))
+        .filter((u) => isUUID(u.id))
+        .map((u) => supabase.from("projects").update({ order_index: u.order_index }).eq("id", u.id))
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
+      setProjects(prev);
+      saveLocalData(LS_KEYS.PROJECTS, prev);
+      return { success: false, error: failed.error.message };
     }
+    return { success: true };
   };
 
   const approvedFeedback = useMemo(

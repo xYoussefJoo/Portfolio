@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Sparkles, ExternalLink } from "lucide-react";
-import { motion } from "framer-motion";
 import { useLanguage } from "~/context/LanguageContext";
 import { usePortfolioData } from "~/context/PortfolioDataContext";
 
@@ -123,21 +122,33 @@ export function Hero() {
     if (!mounted || reducedMotion) return;
     const el = containerRef.current;
     if (!el) return;
-    // If already visible on load, boot immediately; otherwise wait for intersection
-    const bootIfVisible = () => {
-      const r = el.getBoundingClientRect();
-      if (r.top < window.innerHeight * 1.2 && r.bottom > -200) {
-        setWebglReady(true);
-        return true;
+    // Boot three.js (≈180 KB gz) only once the browser is idle, so it doesn't
+    // compete with hydration and first paint; the static logo shows until then
+    let idleId: number | undefined;
+    let timeoutId: number | undefined;
+    const bootWhenIdle = () => {
+      if (typeof (window as any).requestIdleCallback === "function") {
+        idleId = (window as any).requestIdleCallback(() => setWebglReady(true), { timeout: 2500 });
+      } else {
+        timeoutId = window.setTimeout(() => setWebglReady(true), 1200);
       }
-      return false;
     };
-    if (bootIfVisible()) return;
+    const cancelBoot = () => {
+      if (idleId !== undefined) (window as any).cancelIdleCallback?.(idleId);
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    };
+
+    // If already visible on load, boot when idle; otherwise wait for intersection
+    const r = el.getBoundingClientRect();
+    if (r.top < window.innerHeight * 1.2 && r.bottom > -200) {
+      bootWhenIdle();
+      return cancelBoot;
+    }
     const obs = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
           if (e.isIntersecting) {
-            setWebglReady(true);
+            bootWhenIdle();
             obs.disconnect();
             break;
           }
@@ -146,7 +157,10 @@ export function Hero() {
       { rootMargin: "300px 0px" }
     );
     obs.observe(el);
-    return () => obs.disconnect();
+    return () => {
+      obs.disconnect();
+      cancelBoot();
+    };
   }, [mounted, reducedMotion]);
 
   useEffect(() => {
@@ -284,10 +298,12 @@ export function Hero() {
       let transparentTexture: any = null;
       let haloMesh: any = null;
 
-      // Load and process Keso3DLogo — decode off-main-thread when possible
+      // Load and process Keso3DLogo — decode off-main-thread when possible.
+      // Uses the 640px version: the per-pixel loop below touches 0.4M pixels instead
+      // of 2.56M, and the GPU texture is 6x smaller (it renders at ~350px anyway)
       const loadLogo = async () => {
         try {
-          const res = await fetch("/img/Keso3DLogo.jpeg");
+          const res = await fetch("/img/Keso3DLogo-640.jpeg");
           const blob = await res.blob();
           const bmp = await createImageBitmap(blob);
           const imgW = bmp.width;
@@ -305,7 +321,7 @@ export function Hero() {
           const imgData = ctx.getImageData(0, 0, imgW, imgH);
           const data = imgData.data;
 
-          const borderMargin = 8;
+          const borderMargin = Math.max(2, Math.round(imgW / 200)); // 8px at 1600px
           for (let y = 0; y < imgH; y++) {
             for (let x = 0; x < imgW; x++) {
               const idx = (y * imgW + x) * 4;
@@ -533,45 +549,35 @@ export function Hero() {
 
         {/* Left Column - Biography details */}
         <div className="lg:col-span-7 space-y-8 text-[var(--text-primary)]">
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8A60F1]/10 border border-[#8A60F1]/20 text-xs font-semibold uppercase tracking-wider text-[#8A60F1] shadow-[0_0_15px_rgba(138,96,241,0.1)]"
+          <div
+            className="hero-fade-rise inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#8A60F1]/10 border border-[#8A60F1]/20 text-xs font-semibold uppercase tracking-wider text-[#8A60F1] shadow-[0_0_15px_rgba(138,96,241,0.1)]"
           >
             <span className="w-2 h-2 rounded-full bg-[#8A60F1] animate-pulse" />
             {getSection("hero_badge", t.hero.badge)}
-          </motion.div>
+          </div>
 
           <div className="space-y-4">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.15 }}
-              className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] text-[var(--text-primary)]"
+            <h1
+              className="hero-rise text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] text-[var(--text-primary)]"
             >
               {getSection("hero_title_line1", t.hero.titleLine1)} <br />
               <span className="bg-gradient-to-r from-[#8A60F1] via-fuchsia-400 to-[#00f0ff] bg-clip-text text-transparent text-glow-purple">
                 {getSection("hero_title_gradient", t.hero.titleGradient)}
               </span>
-            </motion.h1>
+            </h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-lg md:text-xl text-[var(--text-secondary)] font-normal max-w-xl leading-relaxed"
+            <p
+              style={{ animationDelay: "150ms" }}
+              className="hero-rise text-lg md:text-xl text-[var(--text-secondary)] font-normal max-w-xl leading-relaxed"
             >
               {getSection("hero_intro", t.hero.intro)}
-            </motion.p>
+            </p>
           </div>
 
           {/* Quick Stat Tags */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="flex flex-wrap gap-2.5 pt-2"
+          <div
+            style={{ animationDelay: "300ms" }}
+            className="hero-fade-rise flex flex-wrap gap-2.5 pt-2"
           >
             <span className="px-3.5 py-1.5 rounded-xl bg-[var(--pill-bg)] border border-[var(--pill-border)] text-xs text-[var(--text-secondary)] font-medium flex items-center gap-1.5 shadow-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -585,14 +591,12 @@ export function Hero() {
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
               {getSection("hero_stat_languages", t.hero.statLanguages)}
             </span>
-          </motion.div>
+          </div>
 
           {/* Action CTAs & Social Media Icons Row */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pt-2"
+          <div
+            style={{ animationDelay: "400ms" }}
+            className="hero-fade-rise flex flex-col sm:flex-row items-start sm:items-center gap-6 pt-2"
           >
             <div className="flex flex-wrap items-center gap-4">
               <a
@@ -634,7 +638,7 @@ export function Hero() {
                 })}
               </div>
             )}
-          </motion.div>
+          </div>
         </div>
 
         {/* Right Column - 3D Visual Mesh container with WebGL canvas */}
@@ -646,7 +650,7 @@ export function Hero() {
             <canvas ref={canvasRef} className="absolute inset-0 w-full h-full outline-none pointer-events-auto" />
           ) : (
             <img
-              src="/img/Keso3DLogo.jpeg"
+              src="/img/Keso3DLogo-640.jpeg"
               alt="Kero Amir 3D logo"
               width={420}
               height={420}

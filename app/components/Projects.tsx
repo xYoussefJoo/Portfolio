@@ -23,6 +23,7 @@ import {
   useTransform,
   useSpring,
   animate,
+  useMotionTemplate,
   type PanInfo,
 } from "framer-motion";
 import { ScrollReveal } from "./ScrollReveal";
@@ -120,7 +121,9 @@ export function Projects() {
             </span>
             <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[var(--text-primary)] leading-tight">
               {t.projects.titleLine1}{" "}
-              <span className="font-semibold italic bg-gradient-to-r from-[#8A60F1] via-fuchsia-400 to-[#00f0ff] bg-clip-text text-transparent">
+              {/* inline-block + right padding: the italic "o" leans past the text box, and
+                  bg-clip-text only paints inside the box, so the last letter was cut off */}
+              <span className="inline-block pr-[0.15em] font-semibold italic bg-gradient-to-r from-[#8A60F1] via-fuchsia-400 to-[#00f0ff] bg-clip-text text-transparent">
                 {t.projects.titleGradient}
               </span>
             </h2>
@@ -240,7 +243,9 @@ export function Projects() {
                       isTop,
                     }) => (
                       <SwipeableCard
-                        key={`${project.id}-${offset}-${currentIndex}`}
+                        // Stable key: cards stay mounted and animate to their new stack slot
+                        // instead of being torn down and rebuilt (image re-decode) on every swipe
+                        key={project.id}
                         project={project}
                         resolvedTitle={resolvedTitle}
                         resolvedDesc={resolvedDesc}
@@ -558,9 +563,13 @@ const SwipeableCard = memo(function SwipeableCard({
     damping: 30,
   });
 
-  // Dynamic holographic shine position
+  // Dynamic holographic shine position (motion template: updates without React re-renders)
   const shineX = useTransform(mouseX, [-0.5, 0.5], ["0%", "100%"]);
   const shineY = useTransform(mouseY, [-0.5, 0.5], ["0%", "100%"]);
+  const shineBackground = useMotionTemplate`radial-gradient(circle 340px at ${shineX} ${shineY}, rgba(255, 255, 255, 0.4), transparent 70%)`;
+
+  // Card rect cached on pointer enter — avoids a forced layout on every mousemove
+  const rectRef = useRef<DOMRect | null>(null);
 
   // Reset motion values on card change
   useEffect(() => {
@@ -570,9 +579,13 @@ const SwipeableCard = memo(function SwipeableCard({
     setIsSwipingOut(false);
   }, [offset, isTop, project.id, currentIndex]);
 
+  const handleMouseEnter = () => {
+    if (cardRef.current) rectRef.current = cardRef.current.getBoundingClientRect();
+  };
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!isTop || !cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
+    const rect = rectRef.current ?? (rectRef.current = cardRef.current.getBoundingClientRect());
     const nx = (e.clientX - rect.left) / rect.width - 0.5;
     const ny = (e.clientY - rect.top) / rect.height - 0.5;
     mouseX.set(nx);
@@ -580,6 +593,7 @@ const SwipeableCard = memo(function SwipeableCard({
   };
 
   const handleMouseLeave = () => {
+    rectRef.current = null;
     mouseX.set(0);
     mouseY.set(0);
   };
@@ -620,17 +634,15 @@ const SwipeableCard = memo(function SwipeableCard({
     const isLeftSwipe = info.offset.x < -distanceThreshold || info.velocity.x < -velocityThreshold;
     const isRightSwipe = info.offset.x > distanceThreshold || info.velocity.x > velocityThreshold;
 
+    // Advance the deck first; the reset effect zeroes x once this card is no longer on top
+    // (resetting before advancing made the card snap back to center for a frame)
     if (isLeftSwipe) {
       setIsSwipingOut(true);
       await animate(x, -650, { duration: 0.2, ease: "easeOut" });
-      x.set(0);
-      setIsSwipingOut(false);
       onSwipeLeft();
     } else if (isRightSwipe) {
       setIsSwipingOut(true);
       await animate(x, 650, { duration: 0.2, ease: "easeOut" });
-      x.set(0);
-      setIsSwipingOut(false);
       onSwipeRight();
     } else {
       animate(x, 0, { type: "spring", stiffness: 350, damping: 25 });
@@ -642,6 +654,7 @@ const SwipeableCard = memo(function SwipeableCard({
   return (
     <motion.div
       ref={cardRef}
+      onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
@@ -678,31 +691,36 @@ const SwipeableCard = memo(function SwipeableCard({
         stiffness: 350,
         damping: 28,
       }}
-      className={`rounded-3xl overflow-hidden flex flex-col justify-between border-2 border-[#8A60F1]/35 shadow-[0_20px_50px_rgba(0,0,0,0.7)] select-none transition-colors duration-300 ${
+      className={`rounded-3xl overflow-hidden flex flex-col justify-between border-2 border-[#8A60F1]/35 select-none transition-colors duration-300 ${
+        isTop
+          ? "shadow-[0_20px_50px_rgba(0,0,0,0.7)] light:shadow-[0_18px_40px_rgba(15,23,42,0.16)]"
+          : "shadow-[0_10px_25px_rgba(0,0,0,0.5)] light:shadow-[0_8px_20px_rgba(15,23,42,0.1)]"
+      } ${
         offset === 0
-          ? "bg-[#0d102b] dark:bg-[#0c0e28] light:bg-[#ffffff]"
+          ? "bg-[#0d102b] dark:bg-[#0c0e28] light:bg-[var(--card-solid-bg)]"
           : offset === 1
-          ? "bg-[#090b20] dark:bg-[#08091e] light:bg-[#f1f5f9]"
-          : "bg-[#060716] dark:bg-[#050616] light:bg-[#e2e8f0]"
+          ? "bg-[#090b20] dark:bg-[#08091e] light:bg-[#e5e7ec]"
+          : "bg-[#060716] dark:bg-[#050616] light:bg-[#dcdfe5]"
       } ${
         isTop
           ? "cursor-grab active:cursor-grabbing hover:border-[#8A60F1]/70"
           : "pointer-events-none"
       }`}
     >
-      {/* Dynamic Colored Glow Dropshadow */}
-      <div
-        className="absolute -inset-2 rounded-3xl opacity-35 blur-2xl pointer-events-none -z-10 transition-opacity duration-300"
-        style={{ backgroundColor: accent }}
-      />
+      {/* Colored Glow — gradient instead of a blur filter (a blur is re-rasterized every
+          frame while the card scales/rotates) and only on the top card */}
+      {isTop && (
+        <div
+          className="absolute -inset-2 rounded-3xl opacity-35 pointer-events-none -z-10"
+          style={{ background: `radial-gradient(closest-side, ${accent}, transparent)` }}
+        />
+      )}
 
       {/* Dynamic Holographic Specular Sheen on Cursor Hover */}
       {isTop && (
         <motion.div
-          className="absolute inset-0 pointer-events-none z-30 opacity-30 mix-blend-overlay transition-opacity"
-          style={{
-            background: `radial-gradient(circle 340px at ${shineX} ${shineY}, rgba(255, 255, 255, 0.4), transparent 70%)`,
-          }}
+          className="absolute inset-0 pointer-events-none z-30 opacity-30"
+          style={{ background: shineBackground }}
         />
       )}
 
@@ -745,10 +763,10 @@ const SwipeableCard = memo(function SwipeableCard({
 
         {/* Top Badges */}
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20 pointer-events-none">
-          <span className="px-3.5 py-1 rounded-xl bg-black/85 backdrop-blur-md text-[#8A60F1] font-extrabold text-[10px] uppercase tracking-widest border border-[#8A60F1]/40 shadow-md">
+          <span className="px-3.5 py-1 rounded-xl bg-black/85 text-[#8A60F1] font-extrabold text-[10px] uppercase tracking-widest border border-[#8A60F1]/40 shadow-md">
             {project.category}
           </span>
-          <span className="px-3 py-1 rounded-xl bg-black/85 backdrop-blur-md text-white font-mono text-[11px] font-bold border border-white/20 shadow-md">
+          <span className="px-3 py-1 rounded-xl bg-black/85 text-white font-mono text-[11px] font-bold border border-white/20 shadow-md">
             {project.countryFlag} {project.year}
           </span>
         </div>
@@ -761,7 +779,7 @@ const SwipeableCard = memo(function SwipeableCard({
       </div>
 
       {/* Card Info Body - Solid Background */}
-      <div className="p-6 md:p-8 flex-grow flex flex-col justify-between space-y-6 bg-[#0f1334] dark:bg-[#0f1230] light:bg-[#f8fafc]">
+      <div className="p-6 md:p-8 flex-grow flex flex-col justify-between space-y-6 bg-[#0f1334] dark:bg-[#0f1230] light:bg-[var(--card-solid-body)]">
         <div className="space-y-3 pointer-events-none">
           <div className="flex items-center justify-between gap-2">
             <span className="text-xs font-mono text-[var(--text-muted)] flex items-center gap-1.5 font-semibold">
@@ -790,7 +808,7 @@ const SwipeableCard = memo(function SwipeableCard({
             {project.software.slice(0, 3).map((sw, sIdx) => (
               <span
                 key={sIdx}
-                className="px-2.5 py-1 rounded-lg bg-[#161a42] dark:bg-[#14173c] light:bg-slate-200 border border-[#8A60F1]/30 text-[10px] font-semibold text-[var(--text-primary)] shadow-sm flex items-center gap-1"
+                className="px-2.5 py-1 rounded-lg bg-[#161a42] dark:bg-[#14173c] light:bg-[#dcdfe5] border border-[#8A60F1]/30 text-[10px] font-semibold text-[var(--text-primary)] shadow-sm flex items-center gap-1"
               >
                 <Layers className="w-3 h-3 text-[#8A60F1]" />
                 {sw}
@@ -805,7 +823,7 @@ const SwipeableCard = memo(function SwipeableCard({
                 onOpenPreview();
               }}
               onPointerDown={(e) => e.stopPropagation()}
-              className="px-4 py-2.5 rounded-xl bg-[#161a42] hover:bg-[#1d2258] dark:bg-[#14173c] light:bg-white border border-[#8A60F1]/40 text-xs font-bold text-[var(--text-primary)] hover:text-[#8A60F1] transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+              className="px-4 py-2.5 rounded-xl bg-[#161a42] hover:bg-[#1d2258] dark:bg-[#14173c] light:bg-[var(--card-solid-bg)] light:hover:bg-[#e9e4fb] border border-[#8A60F1]/40 text-xs font-bold text-[var(--text-primary)] hover:text-[#8A60F1] transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
             >
               <Eye className="w-3.5 h-3.5" />
               <span>{viewDetailsText}</span>
@@ -858,14 +876,21 @@ const GridProjectCard = memo(function GridProjectCard({
     damping: 30,
   });
 
+  const rectRef = useRef<DOMRect | null>(null);
+
+  const handleMouseEnter = () => {
+    if (cardRef.current) rectRef.current = cardRef.current.getBoundingClientRect();
+  };
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
+    const rect = rectRef.current ?? (rectRef.current = cardRef.current.getBoundingClientRect());
     mouseX.set((e.clientX - rect.left) / rect.width - 0.5);
     mouseY.set((e.clientY - rect.top) / rect.height - 0.5);
   };
 
   const handleMouseLeave = () => {
+    rectRef.current = null;
     mouseX.set(0);
     mouseY.set(0);
   };
@@ -875,6 +900,7 @@ const GridProjectCard = memo(function GridProjectCard({
   return (
     <motion.div
       ref={cardRef}
+      onMouseEnter={handleMouseEnter}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       style={{
@@ -882,7 +908,9 @@ const GridProjectCard = memo(function GridProjectCard({
         rotateY,
         transformStyle: "preserve-3d",
       }}
-      className="rounded-3xl overflow-hidden flex flex-col justify-between group bg-[#0d102b] dark:bg-[#0c0e28] light:bg-[#ffffff] border-2 border-[#8A60F1]/30 hover:border-[#8A60F1]/70 transition-all duration-300 hover:-translate-y-1.5 shadow-[0_15px_35px_rgba(0,0,0,0.5)] relative"
+      // Only transition border + hover lift: `transition-all` also transitioned the
+      // transform framer-motion writes every frame, making the tilt lag behind the cursor
+      className="rounded-3xl overflow-hidden flex flex-col justify-between group bg-[#0d102b] dark:bg-[#0c0e28] light:bg-[var(--card-solid-bg)] border-2 border-[#8A60F1]/30 hover:border-[#8A60F1]/70 transition-[border-color,translate] duration-300 hover:-translate-y-1.5 shadow-[0_15px_35px_rgba(0,0,0,0.5)] light:shadow-[0_12px_30px_rgba(15,23,42,0.12)] relative"
     >
       {/* Artwork */}
       <div
@@ -901,16 +929,16 @@ const GridProjectCard = memo(function GridProjectCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/30" />
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-          <span className="px-3 py-1 rounded-xl bg-black/80 backdrop-blur-md text-[#8A60F1] border border-[#8A60F1]/40 text-[10px] font-bold uppercase tracking-wider">
+          <span className="px-3 py-1 rounded-xl bg-black/85 text-[#8A60F1] border border-[#8A60F1]/40 text-[10px] font-bold uppercase tracking-wider">
             {project.category}
           </span>
-          <span className="px-2.5 py-1 rounded-xl bg-black/80 backdrop-blur-md text-white text-xs font-mono font-bold">
+          <span className="px-2.5 py-1 rounded-xl bg-black/85 text-white text-xs font-mono font-bold">
             {project.countryFlag} {project.year}
           </span>
         </div>
       </div>
 
-      <div className="p-6 space-y-4 bg-[#0f1334] dark:bg-[#0f1230] light:bg-[#f8fafc] flex-grow flex flex-col justify-between">
+      <div className="p-6 space-y-4 bg-[#0f1334] dark:bg-[#0f1230] light:bg-[var(--card-solid-body)] flex-grow flex flex-col justify-between">
         <div className="space-y-2">
           <h4
             onClick={onOpenPreview}
@@ -931,7 +959,7 @@ const GridProjectCard = memo(function GridProjectCard({
           <div className="flex items-center gap-2">
             <button
               onClick={onOpenPreview}
-              className="p-2 rounded-xl bg-[#161a42] hover:bg-[#1d2258] dark:bg-[#14173c] light:bg-white text-[var(--text-primary)] hover:text-[#8A60F1] border border-[#8A60F1]/30 text-xs transition-colors cursor-pointer"
+              className="p-2 rounded-xl bg-[#161a42] hover:bg-[#1d2258] dark:bg-[#14173c] light:bg-[var(--card-solid-bg)] light:hover:bg-[#e9e4fb] text-[var(--text-primary)] hover:text-[#8A60F1] border border-[#8A60F1]/30 text-xs transition-colors cursor-pointer"
               title="Quick Preview"
             >
               <Eye className="w-3.5 h-3.5" />

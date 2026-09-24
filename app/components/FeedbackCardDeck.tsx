@@ -1,30 +1,61 @@
-import React, { useState, useMemo, useCallback, memo } from "react";
+import React, { useState, useMemo, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Star,
-  Quote,
-  ChevronLeft,
-  ChevronRight,
-  MessageSquarePlus,
-  X,
-  CheckCircle2,
-  Send,
-  Globe,
-  Radio,
-  Layers3,
-} from "lucide-react";
+import { Star, MessageSquarePlus, X, CheckCircle2, Send, Globe, Radio } from "lucide-react";
 import { usePortfolioData } from "~/context/PortfolioDataContext";
 import { useLanguage } from "~/context/LanguageContext";
 import type { FeedbackItem } from "~/utils/supabase";
+
+// Placeholder reviews shown only until real approved feedback exists. They are
+// visibly labeled "Example" on the site so visitors never mistake them for real clients.
+const EXAMPLE_FEEDBACK: FeedbackItem[] = [
+  {
+    id: "example-1",
+    name: "Example Client",
+    role: "Marketing Manager",
+    company: "Sample Brand Co.",
+    country: "Example",
+    rating: 5,
+    message:
+      "Clear communication, fast turnaround, and a brand identity that finally matches our vision. Would work together again.",
+    status: "approved",
+    avatar_url: null,
+    created_at: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "example-2",
+    name: "Example Founder",
+    role: "Founder",
+    company: "Sample Startup",
+    country: "Example",
+    rating: 5,
+    message:
+      "The packaging design and 3D mockups helped us pitch our product before the first print run. Great attention to detail.",
+    status: "approved",
+    avatar_url: null,
+    created_at: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "example-3",
+    name: "Example Art Director",
+    role: "Art Director",
+    company: "Sample Agency",
+    country: "Example",
+    rating: 5,
+    message:
+      "Delivered print-ready files on time with a well-organized layer structure. Easy to hand off to our production team.",
+    status: "approved",
+    avatar_url: null,
+    created_at: "2026-01-01T00:00:00.000Z",
+  },
+];
+
+const isExample = (fb: FeedbackItem) => String(fb.id).startsWith("example-");
 
 export function FeedbackCardDeck() {
   const { approvedFeedback, submitFeedback, isRealtimeConnected } = usePortfolioData();
   const { t } = useLanguage();
 
-  const [viewMode, setViewMode] = useState<"banner" | "deck">("banner");
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [direction, setDirection] = useState<"left" | "right">("right");
 
   // Form State
   const [formName, setFormName] = useState("");
@@ -37,19 +68,15 @@ export function FeedbackCardDeck() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const items = approvedFeedback.length > 0 ? approvedFeedback : [];
+  const hasRealFeedback = approvedFeedback.length > 0;
+  const items = hasRealFeedback ? approvedFeedback : EXAMPLE_FEEDBACK;
 
-  const handleNext = useCallback(() => {
-    if (items.length <= 1) return;
-    setDirection("right");
-    setCurrentIndex((prev) => (prev + 1) % items.length);
-  }, [items.length]);
-
-  const handlePrev = useCallback(() => {
-    if (items.length <= 1) return;
-    setDirection("left");
-    setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-  }, [items.length]);
+  // Real average from real reviews (was a hard-coded "5.0 Rating • 100% Satisfaction")
+  const avgRating = useMemo(() => {
+    if (!hasRealFeedback) return null;
+    const sum = approvedFeedback.reduce((acc, f) => acc + (f.rating || 5), 0);
+    return sum / approvedFeedback.length;
+  }, [approvedFeedback, hasRealFeedback]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,16 +113,6 @@ export function FeedbackCardDeck() {
     }
   };
 
-  const currentItem = items[currentIndex] || {
-    name: "Client Partner",
-    role: "Director",
-    company: "Studio",
-    country: "Global",
-    rating: 5,
-    message: t.testimonials.noReviews,
-    avatar_url: null,
-  };
-
   // Memoized marquee lanes — was recomputed + array-doubled on every render
   const { lane1Items, lane2Items } = useMemo(() => {
     const build = (offset: number) => {
@@ -122,52 +139,26 @@ export function FeedbackCardDeck() {
             <span>{isRealtimeConnected ? t.testimonials.liveRealtime : t.testimonials.realtimeSync}</span>
           </div>
 
-          {/* Average Rating Star Pill */}
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-300 text-xs font-semibold">
-            <div className="flex items-center text-amber-400">
-              <Star className="w-3.5 h-3.5 fill-current" />
-              <Star className="w-3.5 h-3.5 fill-current" />
-              <Star className="w-3.5 h-3.5 fill-current" />
-              <Star className="w-3.5 h-3.5 fill-current" />
-              <Star className="w-3.5 h-3.5 fill-current" />
+          {/* Average Rating Pill — computed from real reviews, hidden while showing examples */}
+          {avgRating !== null && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-300 text-xs font-semibold">
+              <Star className="w-3.5 h-3.5 fill-current text-amber-400" />
+              <span>{avgRating.toFixed(1)} / 5</span>
             </div>
-            <span>{t.testimonials.avgRating}</span>
-          </div>
+          )}
 
           <span className="text-xs text-[var(--text-muted)] font-mono hidden sm:inline">
-            {items.length} {t.testimonials.storiesCount}
+            {hasRealFeedback
+              ? `${items.length} ${t.testimonials.storiesCount}`
+              : t.testimonials.examplesNotice}
           </span>
         </div>
 
-        {/* Right: View Mode Toggle & Leave Feedback Button */}
+        {/* Right: Ticker label & Leave Feedback Button */}
         <div className="flex flex-wrap items-center gap-3 self-start lg:self-auto">
-          {/* View Mode Toggle: Banner Marquee vs 3D Deck */}
-          <div className="flex items-center gap-1 bg-[var(--pill-bg)] p-1 rounded-2xl border border-[var(--pill-border)] shadow-sm">
-            <button
-              onClick={() => setViewMode("banner")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                viewMode === "banner"
-                  ? "bg-[#8A60F1] text-white shadow-[0_0_12px_rgba(138,96,241,0.4)]"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--pill-hover-bg)]"
-              }`}
-              title="Continuous Banner Marquee View"
-            >
-              <Radio className="w-3.5 h-3.5" />
-              <span>{t.testimonials.viewBanner}</span>
-            </button>
-
-            <button
-              onClick={() => setViewMode("deck")}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                viewMode === "deck"
-                  ? "bg-[#8A60F1] text-white shadow-[0_0_12px_rgba(138,96,241,0.4)]"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--pill-hover-bg)]"
-              }`}
-              title="3D Stacked Deck View"
-            >
-              <Layers3 className="w-3.5 h-3.5" />
-              <span>{t.testimonials.viewDeck}</span>
-            </button>
+          <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#8A60F1] text-white shadow-[0_0_12px_rgba(138,96,241,0.4)]">
+            <Radio className="w-3.5 h-3.5" />
+            <span>{t.testimonials.viewBanner}</span>
           </div>
 
           {/* Leave Feedback Modal Trigger */}
@@ -182,172 +173,40 @@ export function FeedbackCardDeck() {
       </div>
 
       {/* =================================================================== */}
-      {/* VIEW 1: INFINITE MARQUEE COMMENT BANNER STREAM                      */}
+      {/* LIVE BANNER TICKER (infinite marquee)                              */}
       {/* =================================================================== */}
-      {viewMode === "banner" ? (
-        <div className="relative w-full overflow-hidden py-4 space-y-6">
-          {/* Left & Right Ambient Fade Overlays for seamless edge blending */}
-          <div className="absolute top-0 bottom-0 left-0 w-16 md:w-32 bg-gradient-to-r from-[var(--bg-primary)] to-transparent z-20 pointer-events-none" />
-          <div className="absolute top-0 bottom-0 right-0 w-16 md:w-32 bg-gradient-to-l from-[var(--bg-primary)] to-transparent z-20 pointer-events-none" />
+      {/* Full-bleed: breaks out of the max-w-7xl container to span the whole viewport
+          (the section's overflow-hidden clips the scrollbar-width overhang of 100vw) */}
+      <div className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden py-4 space-y-6">
+        {/* Left & Right Ambient Fade Overlays for seamless edge blending */}
+        <div className="absolute top-0 bottom-0 left-0 w-16 md:w-32 bg-gradient-to-r from-[var(--bg-primary)] to-transparent z-20 pointer-events-none" />
+        <div className="absolute top-0 bottom-0 right-0 w-16 md:w-32 bg-gradient-to-l from-[var(--bg-primary)] to-transparent z-20 pointer-events-none" />
 
-          {/* Lane 1: Sliding Left */}
-          <div className="flex overflow-hidden">
-            <div className="animate-marquee-left pause-on-hover gap-6 items-stretch">
-              {lane1Items.map((fb, idx) => (
-                <BannerCommentCard key={`lane1-${fb.id || idx}-${idx}`} feedback={fb} />
-              ))}
-            </div>
-          </div>
-
-          {/* Lane 2: Sliding Right */}
-          <div className="flex overflow-hidden">
-            <div className="animate-marquee-right pause-on-hover gap-6 items-stretch">
-              {lane2Items.map((fb, idx) => (
-                <BannerCommentCard key={`lane2-${fb.id || idx}-${idx}`} feedback={fb} />
-              ))}
-            </div>
-          </div>
-
-          {/* Banner bottom hint */}
-          <div className="text-center pt-2">
-            <span className="text-[11px] font-mono text-[var(--text-muted)] bg-[var(--pill-bg)] px-3 py-1 rounded-full border border-[var(--pill-border)]">
-              ✨ {t.testimonials.pauseHint}
-            </span>
+        {/* Lane 1: Sliding Left */}
+        <div className="flex overflow-hidden">
+          <div className="animate-marquee-left pause-on-hover gap-6 items-stretch">
+            {lane1Items.map((fb, idx) => (
+              <BannerCommentCard key={`lane1-${fb.id || idx}-${idx}`} feedback={fb} exampleLabel={isExample(fb) ? t.testimonials.exampleBadge : undefined} />
+            ))}
           </div>
         </div>
-      ) : (
-        /* =================================================================== */
-        /* VIEW 2: 3D SWIPEABLE STACK DECK                                     */
-        /* =================================================================== */
-        <div className="relative w-full max-w-2xl mx-auto min-h-[460px] flex items-center justify-center perspective-[1200px] py-6">
-          {/* Background Stack Illusion Layers */}
-          <div className="absolute w-[90%] h-[380px] rounded-3xl bg-gradient-to-br from-rose-950/40 to-red-900/30 border border-rose-500/20 translate-y-6 scale-[0.92] blur-[1px] pointer-events-none shadow-2xl transition-all duration-500" />
-          <div className="absolute w-[95%] h-[400px] rounded-3xl bg-gradient-to-br from-rose-900/60 to-red-800/40 border border-rose-500/30 translate-y-3 scale-[0.96] pointer-events-none shadow-2xl transition-all duration-500" />
 
-          {/* Top Active Card */}
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={currentIndex + (currentItem.id || "card")}
-              initial={{
-                opacity: 0,
-                x: direction === "right" ? 100 : -100,
-                rotateZ: direction === "right" ? 6 : -6,
-                scale: 0.95,
-              }}
-              animate={{
-                opacity: 1,
-                x: 0,
-                rotateZ: 0,
-                scale: 1,
-              }}
-              exit={{
-                opacity: 0,
-                x: direction === "right" ? -120 : 120,
-                rotateZ: direction === "right" ? -8 : 8,
-                scale: 0.92,
-              }}
-              transition={{
-                duration: 0.45,
-                ease: [0.23, 1, 0.32, 1],
-              }}
-              className="relative w-full rounded-3xl bg-gradient-to-br from-rose-600 via-rose-700 to-red-900 p-8 md:p-12 text-white shadow-[0_25px_60px_rgba(225,29,72,0.4)] border border-rose-400/40 overflow-hidden flex flex-col justify-between min-h-[420px] select-none"
-            >
-              {/* Background Accent Gradients */}
-              <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-red-400/30 blur-3xl pointer-events-none" />
-              <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-rose-950/60 blur-3xl pointer-events-none" />
-
-              {/* Watermark Quote Icon */}
-              <Quote className="absolute right-6 top-6 w-28 h-28 text-white/10 pointer-events-none" />
-
-              <div className="relative z-10 space-y-6">
-                {/* Rating Stars & Verified Tag */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-amber-300">
-                    {Array.from({ length: currentItem.rating || 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className="w-5 h-5 fill-current drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]"
-                      />
-                    ))}
-                  </div>
-
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/25">
-                    Verified Client
-                  </span>
-                </div>
-
-                {/* Main Quote / Message */}
-                <p className="text-lg md:text-xl font-medium leading-relaxed italic text-white/95 drop-shadow-sm line-clamp-4">
-                  "{currentItem.message}"
-                </p>
-              </div>
-
-              {/* Author Footer & Next/Prev Controls */}
-              <div className="relative z-10 pt-6 border-t border-white/20 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-white/20 p-0.5 border border-white/30 backdrop-blur-md overflow-hidden flex-shrink-0 shadow-md">
-                    {currentItem.avatar_url ? (
-                      <img
-                        src={currentItem.avatar_url}
-                        alt={currentItem.name}
-                        loading="lazy"
-                        decoding="async"
-                        width={48}
-                        height={48}
-                        className="w-full h-full object-cover rounded-[14px]"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-rose-800 flex items-center justify-center text-white font-bold text-base rounded-[14px]">
-                        {currentItem.name.charAt(0)}
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <h4 className="font-bold text-white text-base leading-tight">
-                      {currentItem.name}
-                    </h4>
-                    <p className="text-xs text-rose-200/90 font-light mt-0.5">
-                      {currentItem.role}
-                      {currentItem.company && ` • ${currentItem.company}`}
-                    </p>
-                    {currentItem.country && (
-                      <span className="text-[10px] font-mono text-rose-300 block mt-0.5">
-                        {currentItem.country}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Deck Controls */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handlePrev}
-                    disabled={items.length <= 1}
-                    className="p-2.5 rounded-full bg-white/15 hover:bg-white/25 border border-white/25 text-white transition-all hover:scale-110 active:scale-95 disabled:opacity-40 cursor-pointer shadow-md"
-                    aria-label="Previous story"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-
-                  <span className="text-xs font-mono text-white/80 px-1 font-bold">
-                    {items.length > 0 ? currentIndex + 1 : 0} / {items.length}
-                  </span>
-
-                  <button
-                    onClick={handleNext}
-                    disabled={items.length <= 1}
-                    className="p-2.5 rounded-full bg-white/15 hover:bg-white/25 border border-white/25 text-white transition-all hover:scale-110 active:scale-95 disabled:opacity-40 cursor-pointer shadow-md"
-                    aria-label="Next story"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
+        {/* Lane 2: Sliding Right */}
+        <div className="flex overflow-hidden">
+          <div className="animate-marquee-right pause-on-hover gap-6 items-stretch">
+            {lane2Items.map((fb, idx) => (
+              <BannerCommentCard key={`lane2-${fb.id || idx}-${idx}`} feedback={fb} exampleLabel={isExample(fb) ? t.testimonials.exampleBadge : undefined} />
+            ))}
+          </div>
         </div>
-      )}
+
+        {/* Banner bottom hint */}
+        <div className="text-center pt-2">
+          <span className="text-[11px] font-mono text-[var(--text-muted)] bg-[var(--pill-bg)] px-3 py-1 rounded-full border border-[var(--pill-border)]">
+            ✨ {t.testimonials.pauseHint}
+          </span>
+        </div>
+      </div>
 
       {/* =================================================================== */}
       {/* FEEDBACK SUBMISSION MODAL                                           */}
@@ -525,9 +384,18 @@ export function FeedbackCardDeck() {
 // ----------------------------------------------------------------------------
 // BANNER COMMENT CARD (For Continuous Infinite Scrolling Ribbon)
 // ----------------------------------------------------------------------------
-const BannerCommentCard = memo(function BannerCommentCard({ feedback }: { feedback: FeedbackItem }) {
+const BannerCommentCard = memo(function BannerCommentCard({
+  feedback,
+  exampleLabel,
+}: {
+  feedback: FeedbackItem;
+  /** Set for placeholder reviews: replaces the "Verified Client" badge */
+  exampleLabel?: string;
+}) {
   return (
-    <div className="w-[340px] md:w-[400px] flex-shrink-0 glass-card rounded-3xl p-6 border border-[#8A60F1]/20 hover:border-[#8A60F1]/60 hover:shadow-[0_10px_30px_rgba(138,96,241,0.25)] transition-all duration-300 hover:scale-[1.02] flex flex-col justify-between space-y-4 group">
+    // Solid background instead of .glass-card: a backdrop-filter blur on cards that move
+    // every frame (infinite marquee) is re-computed continuously on the GPU
+    <div className="w-[340px] md:w-[400px] flex-shrink-0 bg-[var(--card-solid-bg)] shadow-[0_8px_32px_0_var(--shadow-color)] rounded-3xl p-6 border border-[#8A60F1]/20 hover:border-[#8A60F1]/60 hover:shadow-[0_10px_30px_rgba(138,96,241,0.25)] transition-[border-color,box-shadow,scale] duration-300 hover:scale-[1.02] flex flex-col justify-between space-y-4 group">
       {/* Top Card Header: Avatar, Author, Star Rating */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
@@ -581,11 +449,17 @@ const BannerCommentCard = memo(function BannerCommentCard({ feedback }: { feedba
       <div className="pt-3 border-t border-[var(--card-border)] flex items-center justify-between text-[10px] font-mono text-[var(--text-muted)]">
         <span className="flex items-center gap-1">
           <Globe className="w-3 h-3 text-[#8A60F1]" />
-          {feedback.country || "Global"}
+          {exampleLabel ? "—" : feedback.country || "Global"}
         </span>
-        <span className="px-2 py-0.5 rounded-md bg-[#8A60F1]/10 text-[#8A60F1] font-bold">
-          Verified Client
-        </span>
+        {exampleLabel ? (
+          <span className="px-2 py-0.5 rounded-md bg-amber-400/15 text-amber-400 font-bold uppercase">
+            {exampleLabel}
+          </span>
+        ) : (
+          <span className="px-2 py-0.5 rounded-md bg-[#8A60F1]/10 text-[#8A60F1] font-bold">
+            Verified Client
+          </span>
+        )}
       </div>
     </div>
   );

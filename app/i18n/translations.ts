@@ -123,6 +123,8 @@ export interface TranslationSchema {
     avgRating: string;
     liveStream: string;
     pauseHint: string;
+    exampleBadge: string;
+    examplesNotice: string;
     modal: {
       badge: string;
       title: string;
@@ -357,9 +359,9 @@ export const translations: Record<Language, TranslationSchema> = {
     },
     testimonials: {
       tag: "05 // CLIENT TESTIMONIALS",
-      titleLine1: "Trusted by global",
-      titleGradient: "studios & brands",
-      description: "Endorsements from creative directors, marketing leaders, and founders across the United States, Germany, France, and Egypt.",
+      titleLine1: "What clients",
+      titleGradient: "say about the work",
+      description: "Worked with Kero on a project? Share your experience below. Every review is checked before it appears here.",
       liveRealtime: "Live Supabase Realtime",
       realtimeSync: "Realtime Sync Ready",
       leaveFeedbackBtn: "Leave Feedback",
@@ -370,6 +372,8 @@ export const translations: Record<Language, TranslationSchema> = {
       avgRating: "5.0 Rating • 100% Satisfaction",
       liveStream: "Live Client & Collaborator Stream",
       pauseHint: "Hover card to pause ticker",
+      exampleBadge: "Example",
+      examplesNotice: "Sample reviews — real client feedback appears here once approved",
       modal: {
         badge: "Share Your Experience",
         title: "Leave a Review",
@@ -618,9 +622,9 @@ export const translations: Record<Language, TranslationSchema> = {
     },
     testimonials: {
       tag: "05 // KUNDENSTIMMEN",
-      titleLine1: "Geschätzt von globalen",
-      titleGradient: "Studios & Marken",
-      description: "Empfehlungen von Creative Directors, Marketing-Leitern und Gründern aus den USA, Deutschland, Frankreich und Ägypten.",
+      titleLine1: "Was Kunden",
+      titleGradient: "über die Arbeit sagen",
+      description: "Haben Sie mit Kero an einem Projekt gearbeitet? Teilen Sie hier Ihre Erfahrung. Jede Bewertung wird vor der Veröffentlichung geprüft.",
       liveRealtime: "Live Supabase Realtime",
       realtimeSync: "Echtzeit-Synchronisation",
       leaveFeedbackBtn: "Feedback hinterlassen",
@@ -631,6 +635,8 @@ export const translations: Record<Language, TranslationSchema> = {
       avgRating: "5,0 Bewertung • 100% Zufriedenheit",
       liveStream: "Live Kunden- & Partner-Stream",
       pauseHint: "Mit der Maus anhalten",
+      exampleBadge: "Beispiel",
+      examplesNotice: "Beispielbewertungen — echte Kundenstimmen erscheinen hier nach Freigabe",
       modal: {
         badge: "Erfahrungen teilen",
         title: "Bewertung schreiben",

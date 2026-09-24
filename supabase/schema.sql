@@ -100,7 +100,7 @@ CREATE POLICY "Authenticated can delete sections" ON public.sections FOR DELETE 
 
 -- FEEDBACK POLICIES (public read + public submit, admin-only moderation)
 DROP POLICY IF EXISTS "Public can view feedback" ON public.feedback;
-CREATE POLICY "Public can view feedback" ON public.feedback FOR SELECT USING (true);
+CREATE POLICY "Public can view feedback" ON public.feedback FOR SELECT USING (status = 'approved' OR auth.role() = 'authenticated');
 
 DROP POLICY IF EXISTS "Public can submit feedback" ON public.feedback;
 CREATE POLICY "Public can submit feedback" ON public.feedback FOR INSERT WITH CHECK (true);
